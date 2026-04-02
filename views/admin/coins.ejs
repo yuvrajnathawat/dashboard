@@ -1,0 +1,151 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Coin Management</h1>
+  <p>Give, take, and broadcast coins to users.</p>
+</div>
+
+<div class="grid-2" style="margin-bottom: 24px;">
+  <!-- Give / Take -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Give / Take Coins</h2>
+    </div>
+    <form id="giveForm">
+      <div class="form-group">
+        <label class="form-label">User ID</label>
+        <input type="number" name="user_id" class="form-input" placeholder="User database ID" min="1" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (positive = give, negative = take)</label>
+        <input type="number" name="amount" class="form-input" placeholder="e.g. 100 or -50" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" name="reason" class="form-input" placeholder="Admin adjustment" value="Admin adjustment">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Apply</button>
+      <div id="giveResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+    </form>
+  </div>
+
+  <!-- Broadcast -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Broadcast to All Users</h2>
+    </div>
+    <form id="broadcastForm">
+      <div class="form-group">
+        <label class="form-label">Amount (coins per user)</label>
+        <input type="number" name="amount" class="form-input" placeholder="10" min="1" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" name="reason" class="form-input" placeholder="Admin broadcast" value="Admin broadcast">
+      </div>
+      <div class="alert alert-warning" style="margin-bottom: 16px; font-size: 12px;">
+        ⚠️ This will credit ALL users. Use with caution.
+      </div>
+      <button type="submit" class="btn btn-warning" style="width: 100%;">Broadcast</button>
+      <div id="broadcastResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Transaction Log -->
+<div class="card-header" style="margin-bottom: 12px;">
+  <h2 style="font-size: 18px; font-weight: 600;">Transaction Log</h2>
+</div>
+
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Actor</th>
+        <th>Recipient</th>
+        <th>Amount</th>
+        <th>Reason</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (typeof transactions !== 'undefined' && transactions && transactions.length > 0) { %>
+        <% transactions.forEach(function(tx) { %>
+        <tr>
+          <td style="color: var(--text-muted); font-size: 12px;">
+            <%= tx.actor_username || 'System' %>
+          </td>
+          <td style="font-weight: 500;"><%= tx.recipient_username %></td>
+          <td style="font-weight: 700; color: <%= tx.amount >= 0 ? 'var(--success)' : 'var(--danger)' %>;">
+            <%= tx.amount >= 0 ? '+' : '' %><%= tx.amount.toLocaleString() %>
+          </td>
+          <td style="color: var(--text-muted); font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"><%= tx.reason %></td>
+          <td style="color: var(--text-muted); font-size: 12px;"><%= new Date(tx.created_at).toLocaleString() %></td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+      <tr>
+        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No transactions yet.</td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+<div class="pagination">
+  <% for (var i = 1; i <= totalPages; i++) { %>
+    <% if (i === page) { %>
+    <span class="current"><%= i %></span>
+    <% } else { %>
+    <a href="/admin/coins?page=<%= i %>"><%= i %></a>
+    <% } %>
+  <% } %>
+</div>
+<% } %>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+
+function postJSON(url, data, resultId) {
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    body: JSON.stringify(data),
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    var el = document.getElementById(resultId);
+    if (res.success) {
+      el.style.color = 'var(--success)';
+      el.textContent = '✓ Done!' + (res.newBalance !== undefined ? ' New balance: ' + res.newBalance.toLocaleString() : '') + (res.count !== undefined ? ' Credited ' + res.count + ' users.' : '');
+      setTimeout(function() { location.reload(); }, 1500);
+    } else {
+      el.style.color = 'var(--danger)';
+      el.textContent = res.error || 'Failed.';
+    }
+  });
+}
+
+document.getElementById('giveForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var fd = new FormData(this);
+  postJSON('/admin/coins/give', {
+    user_id: parseInt(fd.get('user_id')),
+    amount: parseInt(fd.get('amount')),
+    reason: fd.get('reason') || 'Admin adjustment'
+  }, 'giveResult');
+});
+
+document.getElementById('broadcastForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!confirm('Broadcast coins to ALL users?')) return;
+  var fd = new FormData(this);
+  postJSON('/admin/coins/broadcast', {
+    amount: parseInt(fd.get('amount')),
+    reason: fd.get('reason') || 'Admin broadcast'
+  }, 'broadcastResult');
+});
+</script>

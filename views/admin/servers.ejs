@@ -1,0 +1,159 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Servers</h1>
+  <p>Manage all servers across the panel.</p>
+</div>
+
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Owner</th>
+        <th>Status</th>
+        <th>Expiry</th>
+        <th>RAM</th>
+        <th>CPU</th>
+        <th>Disk</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (typeof servers !== 'undefined' && servers && servers.length > 0) { %>
+        <% servers.forEach(function(server) { %>
+        <%
+          var expiry = new Date(server.expires_at);
+          var now = new Date();
+          var daysLeft = Math.ceil((expiry - now) / (24 * 60 * 60 * 1000));
+          var expiryClass = daysLeft <= 1 ? 'danger' : (daysLeft <= 3 ? 'warning' : 'success');
+        %>
+        <tr>
+          <td style="font-weight: 500;"><%= server.name %></td>
+          <td style="color: var(--text-muted);">
+            <a href="/admin/users?search=<%= encodeURIComponent(server.owner_username) %>" style="color: var(--accent);">
+              <%= server.owner_username %>
+            </a>
+          </td>
+          <td><span class="badge badge-<%= server.status %>"><%= server.status %></span></td>
+          <td>
+            <span style="color: var(--<%= expiryClass %>); font-size: 12px;">
+              <%= expiry.toLocaleDateString() %>
+              (<%= daysLeft %>d)
+            </span>
+          </td>
+          <td style="color: var(--text-muted);"><%= server.ram_mb %>MB</td>
+          <td style="color: var(--text-muted);"><%= server.cpu_percent %>%</td>
+          <td style="color: var(--text-muted);"><%= Math.round(server.disk_mb / 1024) %>GB</td>
+          <td>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <% if (server.status === 'active') { %>
+              <button class="btn btn-warning btn-sm" onclick="serverAction(<%= server.id %>, 'suspend')">Suspend</button>
+              <% } else if (server.status === 'suspended') { %>
+              <button class="btn btn-success btn-sm" onclick="serverAction(<%= server.id %>, 'unsuspend')">Unsuspend</button>
+              <% } %>
+              <button class="btn btn-ghost btn-sm" onclick="openExtendModal(<%= server.id %>, '<%= server.name.replace(/'/g, "\\'") %>')">Extend</button>
+              <button class="btn btn-ghost btn-sm" onclick="serverAction(<%= server.id %>, 'reinstall')">Reinstall</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteServer(<%= server.id %>, '<%= server.name.replace(/'/g, "\\'") %>')">Delete</button>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">No servers found.</td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+<div class="pagination">
+  <% for (var i = 1; i <= totalPages; i++) { %>
+    <% if (i === page) { %>
+    <span class="current"><%= i %></span>
+    <% } else { %>
+    <a href="/admin/servers?page=<%= i %>"><%= i %></a>
+    <% } %>
+  <% } %>
+</div>
+<% } %>
+
+<!-- Extend Modal -->
+<div class="modal-overlay" id="extendModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Extend — <span id="extendServerName"></span></h3>
+      <button class="modal-close" onclick="document.getElementById('extendModal').classList.remove('active')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Days to extend</label>
+      <input type="number" id="extendDays" class="form-input" placeholder="7" min="1" max="365" value="7">
+    </div>
+    <button class="btn btn-primary" style="width: 100%;" onclick="submitExtend()">Extend</button>
+  </div>
+</div>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+var extendServerId = null;
+
+function serverAction(id, action) {
+  var confirmMsg = { suspend: 'Suspend this server?', unsuspend: 'Unsuspend this server?', reinstall: 'Reinstall this server? All data will be wiped.' };
+  if (!confirm(confirmMsg[action] || 'Confirm?')) return;
+
+  var method = action === 'delete' ? 'DELETE' : 'POST';
+  fetch('/admin/servers/' + id + '/' + action, {
+    method: method,
+    headers: { 'CSRF-Token': csrfToken },
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) location.reload();
+    else alert(data.error || 'Action failed.');
+  });
+}
+
+function deleteServer(id, name) {
+  if (!confirm('Delete server "' + name + '"? This cannot be undone.')) return;
+  fetch('/admin/servers/' + id, {
+    method: 'DELETE',
+    headers: { 'CSRF-Token': csrfToken },
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) location.reload();
+    else alert(data.error || 'Delete failed.');
+  });
+}
+
+function openExtendModal(id, name) {
+  extendServerId = id;
+  document.getElementById('extendServerName').textContent = name;
+  document.getElementById('extendModal').classList.add('active');
+}
+
+function submitExtend() {
+  var days = parseInt(document.getElementById('extendDays').value);
+  if (!days || days < 1) { alert('Enter valid days.'); return; }
+  fetch('/admin/servers/' + extendServerId + '/extend', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    body: JSON.stringify({ days: days }),
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) { document.getElementById('extendModal').classList.remove('active'); location.reload(); }
+    else alert(data.error || 'Failed.');
+  });
+}
+
+document.getElementById('extendModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+</script>

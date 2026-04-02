@@ -1,0 +1,125 @@
+<% layout('layouts/main') %>
+<% bodyClass = 'page-shop' %>
+
+<div class="page-header">
+  <h1>Shop</h1>
+  <p>Spend your coins on permanent resource upgrades.</p>
+</div>
+
+<div style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted);">
+  Your balance:
+  <span style="font-weight: 700; color: var(--warning); font-size: 16px;" id="shopBalance"><%= (user.coins || 0).toLocaleString() %></span>
+  coins
+</div>
+
+<div id="shopMessage" style="display: none; margin-bottom: 16px;"></div>
+
+<% if (!items || items.length === 0) { %>
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">🛒</div>
+    <h3>No items available</h3>
+    <p>The shop is empty right now. Check back later!</p>
+  </div>
+</div>
+<% } else { %>
+<div class="shop-grid">
+  <% items.forEach(function(item) { %>
+  <%
+    var canAfford = (user.coins || 0) >= item.coin_cost;
+    var iconMap = { ram: '💾', cpu: '⚡', disk: '💿', servers: '🖥️' };
+    var icon = iconMap[item.resource_type] || '📦';
+  %>
+  <div class="shop-card">
+    <div class="shop-card-icon"><%= icon %></div>
+    <div class="shop-card-name"><%= item.name %></div>
+    <div class="shop-card-desc"><%= item.description %></div>
+
+    <div style="font-size: 12px; color: var(--text-muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;">
+      +<%= item.resource_amount %>
+      <% if (item.resource_type === 'ram') { %>MB RAM
+      <% } else if (item.resource_type === 'cpu') { %>% CPU
+      <% } else if (item.resource_type === 'disk') { %>MB Disk
+      <% } else if (item.resource_type === 'servers') { %> Server Slot<%= item.resource_amount !== 1 ? 's' : '' %>
+      <% } %>
+    </div>
+
+    <div class="shop-card-price">
+      <svg class="coin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:20px;height:20px;">
+        <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor" font-weight="bold">$</text>
+      </svg>
+      <%= item.coin_cost.toLocaleString() %>
+    </div>
+
+    <button
+      class="btn btn-warning buy-btn"
+      data-item-id="<%= item.id %>"
+      data-item-name="<%= item.name %>"
+      data-item-cost="<%= item.coin_cost %>"
+      <% if (!canAfford) { %>disabled title="Insufficient coins"<% } %>
+    >
+      <% if (canAfford) { %>Buy Now<% } else { %>Need <%= (item.coin_cost - (user.coins || 0)).toLocaleString() %> more<% } %>
+    </button>
+  </div>
+  <% }); %>
+</div>
+<% } %>
+
+<script>
+(function() {
+  var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+  var msgEl = document.getElementById('shopMessage');
+  var balanceEl = document.getElementById('shopBalance');
+
+  function showMessage(text, type) {
+    msgEl.className = 'alert alert-' + type;
+    msgEl.textContent = text;
+    msgEl.style.display = 'flex';
+    setTimeout(function() { msgEl.style.display = 'none'; }, 5000);
+  }
+
+  document.querySelectorAll('.buy-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var itemId = this.dataset.itemId;
+      var itemName = this.dataset.itemName;
+      var itemCost = parseInt(this.dataset.itemCost);
+
+      if (!confirm('Purchase "' + itemName + '" for ' + itemCost.toLocaleString() + ' coins?')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Purchasing...';
+
+      fetch('/shop/buy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ item_id: itemId }),
+        credentials: 'same-origin'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          showMessage('✓ Purchased "' + itemName + '" successfully!', 'success');
+          if (data.newBalance !== undefined && balanceEl) {
+            balanceEl.textContent = data.newBalance.toLocaleString();
+          }
+          setTimeout(function() { location.reload(); }, 1500);
+        } else {
+          showMessage(data.error || 'Purchase failed.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Buy Now';
+        }
+      })
+      .catch(function() {
+        showMessage('Network error. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Buy Now';
+      });
+    });
+  });
+})();
+</script>

@@ -1,0 +1,186 @@
+<% layout('layouts/main') %>
+
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <h1>Users</h1>
+    <p>Manage all registered users.</p>
+  </div>
+</div>
+
+<!-- Search -->
+<form method="GET" action="/admin/users" style="margin-bottom: 20px; display: flex; gap: 8px; max-width: 480px;">
+  <input
+    type="text"
+    name="search"
+    class="form-input"
+    placeholder="Search by username or Discord ID..."
+    value="<%= typeof search !== 'undefined' ? search : '' %>"
+  >
+  <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap;">Search</button>
+  <% if (typeof search !== 'undefined' && search) { %>
+  <a href="/admin/users" class="btn btn-ghost btn-sm">Clear</a>
+  <% } %>
+</form>
+
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Discord ID</th>
+        <th>Coins</th>
+        <th>Servers</th>
+        <th>Joined</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+        <% users.forEach(function(u) { %>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <% if (u.avatar) { %>
+              <img
+                src="https://cdn.discordapp.com/avatars/<%= u.discord_id %>/<%= u.avatar %>.png?size=32"
+                style="width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;"
+                onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"
+                alt=""
+              >
+              <% } else { %>
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent); flex-shrink: 0;"></div>
+              <% } %>
+              <span style="font-weight: 500;"><%= u.username %></span>
+              <% if (u.is_admin) { %><span class="badge badge-active" style="font-size: 9px;">Admin</span><% } %>
+            </div>
+          </td>
+          <td style="color: var(--text-muted); font-family: monospace; font-size: 12px;"><%= u.discord_id %></td>
+          <td style="color: var(--warning); font-weight: 600;"><%= (u.coins || 0).toLocaleString() %></td>
+          <td><%= u.server_count || 0 %></td>
+          <td style="color: var(--text-muted); font-size: 12px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
+          <td>
+            <% if (u.is_suspended) { %>
+            <span class="badge badge-suspended">Suspended</span>
+            <% } else { %>
+            <span class="badge badge-active">Active</span>
+            <% } %>
+          </td>
+          <td>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-ghost btn-sm" onclick="openCoinModal(<%= u.id %>, '<%= u.username.replace(/'/g, "\\'") %>')">Coins</button>
+              <% if (u.is_suspended) { %>
+              <button class="btn btn-success btn-sm" onclick="unsuspendUser(<%= u.id %>)">Unsuspend</button>
+              <% } else { %>
+              <button class="btn btn-warning btn-sm" onclick="suspendUser(<%= u.id %>)">Suspend</button>
+              <% } %>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser(<%= u.id %>, '<%= u.username.replace(/'/g, "\\'") %>')">Delete</button>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+          No users found.
+        </td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+<div class="pagination">
+  <% for (var i = 1; i <= totalPages; i++) { %>
+    <% if (i === page) { %>
+    <span class="current"><%= i %></span>
+    <% } else { %>
+    <a href="/admin/users?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search=' + encodeURIComponent(search) : '' %>"><%= i %></a>
+    <% } %>
+  <% } %>
+</div>
+<% } %>
+
+<!-- Coin Adjustment Modal -->
+<div class="modal-overlay" id="coinModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Adjust Coins — <span id="coinModalUsername"></span></h3>
+      <button class="modal-close" onclick="document.getElementById('coinModal').classList.remove('active')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (positive = give, negative = take)</label>
+      <input type="number" id="coinAmount" class="form-input" placeholder="e.g. 100 or -50">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason</label>
+      <input type="text" id="coinReason" class="form-input" placeholder="Admin adjustment" value="Admin adjustment">
+    </div>
+    <button class="btn btn-primary" style="width: 100%;" onclick="submitCoinAdjust()">Apply</button>
+    <div id="coinResult" style="margin-top: 12px; font-size: 13px; text-align: center;"></div>
+  </div>
+</div>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+var currentUserId = null;
+
+function openCoinModal(userId, username) {
+  currentUserId = userId;
+  document.getElementById('coinModalUsername').textContent = username;
+  document.getElementById('coinAmount').value = '';
+  document.getElementById('coinResult').textContent = '';
+  document.getElementById('coinModal').classList.add('active');
+}
+
+function submitCoinAdjust() {
+  var amount = parseInt(document.getElementById('coinAmount').value);
+  var reason = document.getElementById('coinReason').value || 'Admin adjustment';
+  if (!amount || isNaN(amount)) { alert('Enter a valid amount.'); return; }
+
+  fetch('/admin/users/' + currentUserId + '/coins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    body: JSON.stringify({ amount: amount, reason: reason }),
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var el = document.getElementById('coinResult');
+    if (data.success) {
+      el.style.color = 'var(--success)';
+      el.textContent = '✓ Done. New balance: ' + data.newBalance.toLocaleString();
+      setTimeout(function() { document.getElementById('coinModal').classList.remove('active'); location.reload(); }, 1500);
+    } else {
+      el.style.color = 'var(--danger)';
+      el.textContent = data.error || 'Failed.';
+    }
+  });
+}
+
+function suspendUser(id) {
+  if (!confirm('Suspend this user?')) return;
+  fetch('/admin/users/' + id + '/suspend', {
+    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+  }).then(function() { location.reload(); });
+}
+
+function unsuspendUser(id) {
+  fetch('/admin/users/' + id + '/unsuspend', {
+    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+  }).then(function() { location.reload(); });
+}
+
+function deleteUser(id, username) {
+  if (!confirm('Delete user "' + username + '"? This will delete all their servers too. This cannot be undone.')) return;
+  fetch('/admin/users/' + id, {
+    method: 'DELETE', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+  }).then(function() { location.reload(); });
+}
+
+document.getElementById('coinModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+</script>

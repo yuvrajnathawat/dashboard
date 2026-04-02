@@ -1,0 +1,105 @@
+<% layout('layouts/main') %>
+<% bodyClass = 'page-redeem' %>
+
+<div class="page-header">
+  <h1>Redeem Code</h1>
+  <p>Enter a code to claim coins and resource bonuses.</p>
+</div>
+
+<div class="card" style="max-width: 480px;">
+  <form id="redeemForm">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+    <div class="form-group">
+      <label class="form-label" for="code">Redeem Code</label>
+      <input
+        type="text"
+        id="code"
+        name="code"
+        class="form-input"
+        placeholder="Enter your code..."
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        style="font-size: 16px; letter-spacing: 2px; text-transform: uppercase;"
+        required
+      >
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width: 100%;" id="redeemBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
+        <line x1="12" y1="22" x2="12" y2="7"/>
+      </svg>
+      Redeem
+    </button>
+  </form>
+
+  <div id="redeemResult" style="margin-top: 16px; display: none;"></div>
+</div>
+
+<script>
+(function() {
+  var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+  var form = document.getElementById('redeemForm');
+  var resultEl = document.getElementById('redeemResult');
+  var btn = document.getElementById('redeemBtn');
+
+  // Auto-uppercase input
+  document.getElementById('code').addEventListener('input', function() {
+    var pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var code = document.getElementById('code').value.trim();
+    if (!code) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Redeeming...';
+    resultEl.style.display = 'none';
+
+    fetch('/redeem', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ code: code }),
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      resultEl.style.display = 'block';
+      if (data.success) {
+        resultEl.className = 'alert alert-success';
+        var msg = '✓ Code redeemed! You received ' + data.coins + ' coins.';
+        if (data.resources) {
+          msg += ' Resource bonuses applied.';
+        }
+        resultEl.textContent = msg;
+        document.getElementById('code').value = '';
+        // Update navbar balance if present
+        var navBalance = document.querySelector('.navbar-coin-balance');
+        if (navBalance && data.newBalance !== undefined) {
+          navBalance.textContent = data.newBalance.toLocaleString();
+        }
+      } else {
+        resultEl.className = 'alert alert-error';
+        resultEl.textContent = data.error || 'Failed to redeem code.';
+      }
+    })
+    .catch(function() {
+      resultEl.style.display = 'block';
+      resultEl.className = 'alert alert-error';
+      resultEl.textContent = 'Network error. Please try again.';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg> Redeem';
+    });
+  });
+})();
+</script>

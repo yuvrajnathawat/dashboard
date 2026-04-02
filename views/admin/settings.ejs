@@ -1,0 +1,124 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Settings</h1>
+  <p>Configure global dashboard settings.</p>
+</div>
+
+<form method="POST" action="/admin/settings">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+  <!-- Economy Settings -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2 class="card-title">💰 Economy</h2>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="creation_cost">Server Creation Cost (coins)</label>
+        <input type="number" id="creation_cost" name="creation_cost" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.creation_cost ? settings.creation_cost : '100' %>"
+          min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="renewal_cost">Server Renewal Cost (coins)</label>
+        <input type="number" id="renewal_cost" name="renewal_cost" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.renewal_cost ? settings.renewal_cost : '50' %>"
+          min="0" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Lifecycle -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2 class="card-title">🖥️ Server Lifecycle</h2>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="renewal_period_days">Renewal Period (days)</label>
+        <input type="number" id="renewal_period_days" name="renewal_period_days" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.renewal_period_days ? settings.renewal_period_days : '7' %>"
+          min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="deletion_grace_days">Deletion Grace Period (days)</label>
+        <input type="number" id="deletion_grace_days" name="deletion_grace_days" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.deletion_grace_days ? settings.deletion_grace_days : '3' %>"
+          min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="max_servers_per_user">Max Servers per User</label>
+        <input type="number" id="max_servers_per_user" name="max_servers_per_user" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.max_servers_per_user ? settings.max_servers_per_user : '2' %>"
+          min="1" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- AFK Settings -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2 class="card-title">⏱️ AFK Farming</h2>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="afk_coins_per_ping">Coins per Ping</label>
+        <input type="number" id="afk_coins_per_ping" name="afk_coins_per_ping" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.afk_coins_per_ping ? settings.afk_coins_per_ping : '1' %>"
+          min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="afk_daily_limit">Daily AFK Limit (coins)</label>
+        <input type="number" id="afk_daily_limit" name="afk_daily_limit" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.afk_daily_limit ? settings.afk_daily_limit : '100' %>"
+          min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="afk_captcha_interval_minutes">CAPTCHA Interval (minutes)</label>
+        <input type="number" id="afk_captcha_interval_minutes" name="afk_captcha_interval_minutes" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.afk_captcha_interval_minutes ? settings.afk_captcha_interval_minutes : '10' %>"
+          min="1" step="1">
+        <div class="form-hint">How often to show CAPTCHA challenge during AFK farming.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Default Resource Limits -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2 class="card-title">📊 Default Resource Limits</h2>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="default_ram_mb">Default RAM (MB)</label>
+        <input type="number" id="default_ram_mb" name="default_ram_mb" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.default_ram_mb ? settings.default_ram_mb : '1024' %>"
+          min="128" step="128">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="default_cpu_percent">Default CPU (%)</label>
+        <input type="number" id="default_cpu_percent" name="default_cpu_percent" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.default_cpu_percent ? settings.default_cpu_percent : '100' %>"
+          min="10" step="10">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="default_disk_mb">Default Disk (MB)</label>
+        <input type="number" id="default_disk_mb" name="default_disk_mb" class="form-input"
+          value="<%= typeof settings !== 'undefined' && settings.default_disk_mb ? settings.default_disk_mb : '5120' %>"
+          min="512" step="512">
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 12px;">
+    <button type="submit" class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+      </svg>
+      Save Settings
+    </button>
+    <a href="/admin" class="btn btn-ghost">Cancel</a>
+  </div>
+</form>

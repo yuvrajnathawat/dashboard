@@ -1,0 +1,60 @@
+<% layout('layouts/main') %>
+<% bodyClass = 'page-afk' %>
+
+<div style="min-height: calc(100vh - 120px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px;">
+
+  <!-- Ambient glow -->
+  <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0;"></div>
+
+  <div style="position: relative; z-index: 1; max-width: 480px; width: 100%;">
+    <div style="margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); font-weight: 600;">AFK Farming</div>
+
+    <div class="coin-counter" id="coinCounter"><%= (user.coins || 0).toLocaleString() %></div>
+    <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px; margin-bottom: 32px;">coins</div>
+
+    <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px;">
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Session Earned</div>
+      <div style="font-size: 28px; font-weight: 700; color: var(--success); font-family: var(--font-primary);">
+        +<span class="session-earned">0</span>
+      </div>
+    </div>
+
+    <div class="afk-status" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px; min-height: 20px;">
+      Connecting...
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--text-muted);">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite;"></div>
+      Earning coins every 60 seconds
+    </div>
+
+    <div style="margin-top: 32px;">
+      <a href="/dashboard" class="btn btn-ghost btn-sm">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<!-- CAPTCHA Overlay -->
+<div class="captcha-overlay" id="captchaOverlay">
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; max-width: 360px; width: 100%; text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 16px;">🤖</div>
+    <h2 style="margin-bottom: 12px;">Are you still there?</h2>
+    <p style="margin-bottom: 24px; font-size: 14px;">Please confirm you're still here to continue earning coins.</p>
+    <button class="btn btn-primary captcha-btn" style="width: 100%; font-size: 16px; padding: 14px;">
+      I'm here
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.afk-status--active { color: var(--success); }
+.afk-status--warning { color: var(--warning); }
+.afk-status--error { color: var(--danger); }
+.afk-status--info { color: var(--accent); }
+</style>
+
+<script src="/js/afk.js"></script>

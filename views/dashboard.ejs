@@ -1,0 +1,185 @@
+<% layout('layouts/main') %>
+<% bodyClass = 'page-dashboard' %>
+
+<!-- Welcome Bar -->
+<div class="card" style="margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+  <% if (user.avatar) { %>
+  <img
+    src="https://cdn.discordapp.com/avatars/<%= user.discord_id %>/<%= user.avatar %>.png?size=128"
+    alt="<%= user.username %>"
+    style="width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--accent); flex-shrink: 0;"
+    onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"
+  >
+  <% } %>
+  <div style="flex: 1; min-width: 0;">
+    <h1 style="font-size: 20px; margin-bottom: 2px;">Welcome back, <%= user.username %>!</h1>
+    <p style="font-size: 13px;">Manage your servers and earn coins below.</p>
+  </div>
+  <div class="navbar-coins" style="font-size: 16px; padding: 8px 16px;">
+    <svg class="coin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:20px;height:20px;">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor" font-weight="bold">$</text>
+    </svg>
+    <span><%= (user.coins || 0).toLocaleString() %> coins</span>
+  </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Servers</div>
+    <div class="stat-value accent"><%= totalServers %></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Coins Earned Today</div>
+    <div class="stat-value success"><%= coinsEarnedToday.toLocaleString() %></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Next Expiry</div>
+    <div class="stat-value" style="font-size: 16px; padding-top: 4px;">
+      <% if (nextExpiry) { %>
+        <%= new Date(nextExpiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+      <% } else { %>
+        <span style="color: var(--text-muted); font-size: 14px;">No active servers</span>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Earn Shortcuts -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <h2 class="card-title">Earn Coins</h2>
+  </div>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <a href="/afk" class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      AFK Farm
+    </a>
+    <a href="/earn" class="btn btn-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      Earn Links
+    </a>
+    <a href="/redeem" class="btn btn-ghost" style="border-color: var(--accent); color: var(--accent);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
+        <line x1="12" y1="22" x2="12" y2="7"/>
+      </svg>
+      Redeem Code
+    </a>
+    <a href="/shop" class="btn btn-warning">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+      Shop
+    </a>
+  </div>
+</div>
+
+<!-- Server Cards -->
+<div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <h2 style="font-size: 18px; font-weight: 600;">Your Servers</h2>
+  <a href="/servers/create" class="btn btn-primary btn-sm">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    New Server
+  </a>
+</div>
+
+<% if (servers && servers.length > 0) { %>
+<div class="grid-auto">
+  <% servers.forEach(function(server) { %>
+  <%
+    var now = new Date();
+    var expiry = new Date(server.expires_at);
+    var totalMs = 7 * 24 * 60 * 60 * 1000; // assume 7-day period
+    var remainingMs = expiry - now;
+    var pct = Math.max(0, Math.min(100, (remainingMs / totalMs) * 100));
+    var daysLeft = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+    var barClass = pct > 50 ? '' : (pct > 20 ? 'warning' : 'danger');
+  %>
+  <div class="server-card">
+    <div class="server-card-header">
+      <div class="server-card-name"><%= server.name %></div>
+      <span class="badge badge-<%= server.status %>"><%= server.status %></span>
+    </div>
+
+    <div class="server-card-resources">
+      <div class="resource-item">
+        <div class="resource-label">RAM</div>
+        <div class="resource-value"><%= server.ram_mb %>MB</div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-label">CPU</div>
+        <div class="resource-value"><%= server.cpu_percent %>%</div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-label">Disk</div>
+        <div class="resource-value"><%= Math.round(server.disk_mb / 1024) %>GB</div>
+      </div>
+    </div>
+
+    <div class="expiry-bar-wrapper">
+      <div class="expiry-bar-label">
+        <span>Expires</span>
+        <span><%= daysLeft %> day<%= daysLeft !== 1 ? 's' : '' %> left</span>
+      </div>
+      <div class="expiry-bar <%= barClass %>">
+        <div class="expiry-bar-fill" style="width: <%= pct %>%"></div>
+      </div>
+    </div>
+
+    <div class="server-card-actions">
+      <% if (server.status !== 'deleted') { %>
+      <button
+        class="btn btn-primary btn-sm"
+        onclick="renewServer(<%= server.id %>)"
+        <% if (server.status === 'suspended') { %>title="Renew to unsuspend"<% } %>
+      >
+        Renew
+      </button>
+      <% } %>
+    </div>
+  </div>
+  <% }); %>
+</div>
+<% } else { %>
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">🖥️</div>
+    <h3>No servers yet</h3>
+    <p>Create your first server to get started with free hosting.</p>
+    <a href="/servers/create" class="btn btn-primary">Create your first server</a>
+  </div>
+</div>
+<% } %>
+
+<script>
+function renewServer(serverId) {
+  if (!confirm('Renew this server? Coins will be deducted.')) return;
+  fetch('/servers/' + serverId + '/renew', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'CSRF-Token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+    },
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Renewal failed');
+    }
+  })
+  .catch(function() { alert('Network error. Please try again.'); });
+}
+</script>

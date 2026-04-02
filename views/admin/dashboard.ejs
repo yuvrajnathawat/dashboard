@@ -1,0 +1,78 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Admin Dashboard</h1>
+  <p>Overview of the FreeNode Dashboard system.</p>
+</div>
+
+<% var s = typeof stats !== 'undefined' ? stats : {}; %>
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value accent"><%= s.totalUsers !== undefined ? Number(s.totalUsers).toLocaleString() : '—' %></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Active Servers</div>
+    <div class="stat-value success"><%= s.totalActiveServers !== undefined ? Number(s.totalActiveServers).toLocaleString() : '—' %></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Suspended Servers</div>
+    <div class="stat-value warning"><%= s.totalSuspendedServers !== undefined ? Number(s.totalSuspendedServers).toLocaleString() : '—' %></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Expiring in 24h</div>
+    <div class="stat-value danger"><%= s.expiringIn24h !== undefined ? Number(s.expiringIn24h).toLocaleString() : '—' %></div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-top: 24px;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <a href="/admin/users" class="btn btn-ghost" style="justify-content: flex-start;">👥 Manage Users</a>
+      <a href="/admin/servers" class="btn btn-ghost" style="justify-content: flex-start;">🖥️ Manage Servers</a>
+      <a href="/admin/coins" class="btn btn-ghost" style="justify-content: flex-start;">💰 Manage Coins</a>
+      <a href="/admin/codes" class="btn btn-ghost" style="justify-content: flex-start;">🎁 Manage Codes</a>
+      <a href="/admin/eggs" class="btn btn-ghost" style="justify-content: flex-start;">🥚 Configure Eggs</a>
+      <a href="/admin/settings" class="btn btn-ghost" style="justify-content: flex-start;">⚙️ Settings</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">System Info</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Node.js</span>
+        <span><%= typeof process !== 'undefined' ? process.version : 'N/A' %></span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Environment</span>
+        <span><%= typeof process !== 'undefined' ? (process.env.NODE_ENV || 'development') : 'N/A' %></span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-muted);">Uptime</span>
+        <span id="uptime">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var startTime = Date.now();
+  function updateUptime() {
+    var elapsed = Math.floor((Date.now() - startTime) / 1000);
+    var h = Math.floor(elapsed / 3600);
+    var m = Math.floor((elapsed % 3600) / 60);
+    var s = elapsed % 60;
+    document.getElementById('uptime').textContent =
+      (h > 0 ? h + 'h ' : '') + (m > 0 ? m + 'm ' : '') + s + 's';
+  }
+  setInterval(updateUptime, 1000);
+  updateUptime();
+})();
+</script>

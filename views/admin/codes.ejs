@@ -1,0 +1,158 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Redeem Codes</h1>
+  <p>Create and manage promotional codes.</p>
+</div>
+
+<div class="grid-2" style="margin-bottom: 24px;">
+  <!-- Create Single Code -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Create Code</h2>
+    </div>
+    <form id="createCodeForm">
+      <div class="form-group">
+        <label class="form-label">Code String</label>
+        <input type="text" name="code" class="form-input" placeholder="PROMO2024" style="text-transform: uppercase;" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coin Reward</label>
+        <input type="number" name="coin_reward" class="form-input" placeholder="100" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Uses (blank = unlimited)</label>
+        <input type="number" name="max_uses" class="form-input" placeholder="Leave blank for unlimited" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expires At (optional)</label>
+        <input type="datetime-local" name="expires_at" class="form-input">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Create Code</button>
+      <div id="createResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+    </form>
+  </div>
+
+  <!-- Bulk Generate -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Bulk Generate</h2>
+    </div>
+    <form id="bulkCodeForm">
+      <div class="form-group">
+        <label class="form-label">Quantity (max 1000)</label>
+        <input type="number" name="count" class="form-input" placeholder="10" min="1" max="1000" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coin Reward Each</label>
+        <input type="number" name="coin_reward" class="form-input" placeholder="50" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Uses Each (blank = unlimited)</label>
+        <input type="number" name="max_uses" class="form-input" placeholder="Leave blank for unlimited" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expires At (optional)</label>
+        <input type="datetime-local" name="expires_at" class="form-input">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Generate Codes</button>
+      <div id="bulkResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Codes Table -->
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Coins</th>
+        <th>Uses</th>
+        <th>Max Uses</th>
+        <th>Expires</th>
+        <th>Created</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (typeof codes !== 'undefined' && codes && codes.length > 0) { %>
+        <% codes.forEach(function(code) { %>
+        <%
+          var isActive = !code.expires_at || new Date(code.expires_at) > new Date();
+          var isMaxed = code.max_uses !== null && code.use_count >= code.max_uses;
+          var statusClass = (!isActive || isMaxed) ? 'suspended' : 'active';
+          var statusText = isMaxed ? 'Maxed' : (!isActive ? 'Expired' : 'Active');
+        %>
+        <tr>
+          <td style="font-family: monospace; font-size: 12px; font-weight: 600; color: var(--accent);"><%= code.code %></td>
+          <td style="color: var(--warning);"><%= code.coin_reward %></td>
+          <td><%= code.use_count %></td>
+          <td><%= code.max_uses !== null ? code.max_uses : '∞' %></td>
+          <td style="font-size: 12px; color: var(--text-muted);">
+            <%= code.expires_at ? new Date(code.expires_at).toLocaleDateString() : 'Never' %>
+          </td>
+          <td style="font-size: 12px; color: var(--text-muted);"><%= new Date(code.created_at).toLocaleDateString() %></td>
+          <td><span class="badge badge-<%= statusClass %>"><%= statusText %></span></td>
+          <td>
+            <% if (statusClass === 'active') { %>
+            <button class="btn btn-danger btn-sm" onclick="deactivateCode(<%= code.id %>)">Deactivate</button>
+            <% } else { %>
+            <span style="color: var(--text-muted); font-size: 12px;">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">No codes yet.</td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+
+function postForm(url, formEl, resultEl) {
+  var data = {};
+  new FormData(formEl).forEach(function(v, k) { if (v) data[k] = v; });
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    body: JSON.stringify(data),
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    var el = document.getElementById(resultEl);
+    if (res.success) {
+      el.style.color = 'var(--success)';
+      el.textContent = '✓ Done!';
+      setTimeout(function() { location.reload(); }, 1000);
+    } else {
+      el.style.color = 'var(--danger)';
+      el.textContent = res.error || 'Failed.';
+    }
+  });
+}
+
+document.getElementById('createCodeForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  postForm('/admin/codes', this, 'createResult');
+});
+
+document.getElementById('bulkCodeForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  postForm('/admin/codes/bulk', this, 'bulkResult');
+});
+
+function deactivateCode(id) {
+  if (!confirm('Deactivate this code?')) return;
+  fetch('/admin/codes/' + id + '/deactivate', {
+    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+  }).then(function() { location.reload(); });
+}
+</script>

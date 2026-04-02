@@ -1,0 +1,137 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Egg Configuration</h1>
+  <p>Enable or disable server types available to users.</p>
+</div>
+
+<% if (typeof nests !== 'undefined' && nests && nests.length > 0) { %>
+  <% nests.forEach(function(nest) { %>
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <h2 class="card-title">
+        <%= nest.attributes.name %>
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 8px;"><%= nest.attributes.description || '' %></span>
+      </h2>
+    </div>
+
+    <% if (nest.eggs && nest.eggs.length > 0) { %>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <% nest.eggs.forEach(function(egg) { %>
+      <%
+        var eggId = egg.attributes.id;
+        var isEnabled = typeof enabledEggIds !== 'undefined' && enabledEggIds.includes(eggId);
+      %>
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 600; margin-bottom: 4px;"><%= egg.attributes.name %></div>
+          <div style="font-size: 12px; color: var(--text-muted);">ID: <%= eggId %></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <% if (isEnabled) { %>
+          <span class="badge badge-active">Enabled</span>
+          <button class="btn btn-danger btn-sm" onclick="toggleEgg(<%= eggId %>, 'disable')">Disable</button>
+          <% } else { %>
+          <span class="badge badge-suspended">Disabled</span>
+          <button class="btn btn-success btn-sm" onclick="toggleEgg(<%= eggId %>, 'enable')">Enable</button>
+          <% } %>
+          <button class="btn btn-ghost btn-sm" onclick="openDefaultsModal(<%= eggId %>, '<%= egg.attributes.name.replace(/'/g, "\\'") %>')">Set Defaults</button>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <% } else { %>
+    <p style="color: var(--text-muted); font-size: 13px;">No eggs in this nest.</p>
+    <% } %>
+  </div>
+  <% }); %>
+<% } else { %>
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-icon">🥚</div>
+    <h3>No eggs found</h3>
+    <p>Could not fetch eggs from Pterodactyl. Check your API configuration.</p>
+  </div>
+</div>
+<% } %>
+
+<!-- Defaults Modal -->
+<div class="modal-overlay" id="defaultsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Set Defaults — <span id="defaultsEggName"></span></h3>
+      <button class="modal-close" onclick="document.getElementById('defaultsModal').classList.remove('active')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">RAM (MB)</label>
+      <input type="number" id="defaultRam" class="form-input" placeholder="1024" min="128">
+    </div>
+    <div class="form-group">
+      <label class="form-label">CPU (%)</label>
+      <input type="number" id="defaultCpu" class="form-input" placeholder="100" min="10">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Disk (MB)</label>
+      <input type="number" id="defaultDisk" class="form-input" placeholder="5120" min="512">
+    </div>
+    <button class="btn btn-primary" style="width: 100%;" onclick="submitDefaults()">Save Defaults</button>
+    <div id="defaultsResult" style="margin-top: 12px; font-size: 13px; text-align: center;"></div>
+  </div>
+</div>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+var currentEggId = null;
+
+function toggleEgg(eggId, action) {
+  fetch('/admin/eggs/' + eggId + '/' + action, {
+    method: 'POST',
+    headers: { 'CSRF-Token': csrfToken },
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) location.reload();
+    else alert(data.error || 'Failed.');
+  });
+}
+
+function openDefaultsModal(eggId, eggName) {
+  currentEggId = eggId;
+  document.getElementById('defaultsEggName').textContent = eggName;
+  document.getElementById('defaultsResult').textContent = '';
+  document.getElementById('defaultsModal').classList.add('active');
+}
+
+function submitDefaults() {
+  var ram = parseInt(document.getElementById('defaultRam').value);
+  var cpu = parseInt(document.getElementById('defaultCpu').value);
+  var disk = parseInt(document.getElementById('defaultDisk').value);
+
+  if (!ram || !cpu || !disk) { alert('Fill in all fields.'); return; }
+
+  fetch('/admin/eggs/' + currentEggId + '/defaults', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    body: JSON.stringify({ ram_mb: ram, cpu_percent: cpu, disk_mb: disk }),
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var el = document.getElementById('defaultsResult');
+    if (data.success) {
+      el.style.color = 'var(--success)';
+      el.textContent = '✓ Defaults saved.';
+      setTimeout(function() { document.getElementById('defaultsModal').classList.remove('active'); }, 1000);
+    } else {
+      el.style.color = 'var(--danger)';
+      el.textContent = data.error || 'Failed.';
+    }
+  });
+}
+
+document.getElementById('defaultsModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+</script>

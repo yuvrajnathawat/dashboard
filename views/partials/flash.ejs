@@ -1,0 +1,27 @@
+<% 
+  var _messages = typeof messages !== 'undefined' ? messages : {};
+  var successMessages = _messages.success || [];
+  var errorMessages = _messages.error || [];
+%>
+<% if (successMessages.length > 0 || errorMessages.length > 0) { %>
+
+  <% successMessages.forEach(function(msg) { %>
+  <div class="alert alert-success" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span><%= msg %></span>
+    <button class="alert-dismiss" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+  </div>
+  <% }); %>
+
+  <% errorMessages.forEach(function(msg) { %>
+  <div class="alert alert-error" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span><%= msg %></span>
+    <button class="alert-dismiss" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+  </div>
+  <% }); %>
+<% } %>

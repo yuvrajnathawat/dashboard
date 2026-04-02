@@ -1,0 +1,103 @@
+<% layout('layouts/main') %>
+
+<div class="page-header">
+  <h1>Create a Server</h1>
+  <p>Deploy a new game or bot server. Cost: <strong style="color: var(--warning);"><%= creationCost %> coins</strong></p>
+</div>
+
+<% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
+<div class="alert alert-error" style="margin-bottom: 20px;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <div>
+    <% errors.forEach(function(err) { %>
+    <div><%= err %></div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
+
+<div class="card" style="max-width: 600px;">
+  <form method="POST" action="/servers/create">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+    <div class="form-group">
+      <label class="form-label" for="name">Server Name</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        class="form-input"
+        placeholder="my-cool-server"
+        minlength="3"
+        maxlength="32"
+        pattern="[a-zA-Z0-9\-]+"
+        required
+        autocomplete="off"
+      >
+      <div class="form-hint">3–32 characters, letters, numbers, and dashes only.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="egg_id">Server Type</label>
+      <select id="egg_id" name="egg_id" class="form-select" required>
+        <option value="">— Select a server type —</option>
+        <% if (typeof eggs !== 'undefined' && eggs && eggs.length > 0) { %>
+          <% eggs.forEach(function(egg) { %>
+          <option value="<%= egg.attributes.id %>"><%= egg.attributes.name %></option>
+          <% }); %>
+        <% } else { %>
+          <option value="" disabled>No server types available</option>
+        <% } %>
+      </select>
+      <% if (!eggs || eggs.length === 0) { %>
+      <div class="form-hint" style="color: var(--warning);">No eggs are enabled. Ask an admin to enable some.</div>
+      <% } %>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="node_id">Node</label>
+      <select id="node_id" name="node_id" class="form-select" required>
+        <option value="">— Select a node —</option>
+        <% if (typeof nodes !== 'undefined' && nodes && nodes.length > 0) { %>
+          <% nodes.forEach(function(node) { %>
+          <option value="<%= node.attributes.id %>"><%= node.attributes.name %> (<%= node.attributes.location_id ? 'Location ' + node.attributes.location_id : 'Default' %>)</option>
+          <% }); %>
+        <% } else { %>
+          <option value="" disabled>No nodes available</option>
+        <% } %>
+      </select>
+    </div>
+
+    <div class="card" style="background: rgba(88,101,242,0.08); border-color: rgba(88,101,242,0.2); margin-bottom: 20px; padding: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="color: var(--text-muted); font-size: 13px;">Creation Cost</span>
+        <span style="font-size: 18px; font-weight: 700; color: var(--warning);"><%= creationCost %> coins</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+        <span style="color: var(--text-muted); font-size: 13px;">Your Balance</span>
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);"><%= (user.coins || 0).toLocaleString() %> coins</span>
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="btn btn-primary"
+      style="width: 100%;"
+      <% if ((user.coins || 0) < creationCost) { %>disabled title="Insufficient coins"<% } %>
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Create Server
+    </button>
+
+    <% if ((user.coins || 0) < creationCost) { %>
+    <p style="text-align: center; margin-top: 12px; font-size: 13px; color: var(--danger);">
+      You need <%= creationCost - (user.coins || 0) %> more coins to create a server.
+      <a href="/earn">Earn more</a>
+    </p>
+    <% } %>
+  </form>
+</div>

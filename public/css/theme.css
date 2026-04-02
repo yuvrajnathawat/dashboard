@@ -1,0 +1,192 @@
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ─── CSS Custom Properties ─────────────────────────────────────────────────── */
+:root {
+  --bg-primary: #0d0f14;
+  --bg-card: #161922;
+  --accent: #5865F2;
+  --accent-light: #7983f5;
+  --success: #57F287;
+  --warning: #FEE75C;
+  --danger: #ED4245;
+  --text-primary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+  --font-primary: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-secondary: 'Inter', sans-serif;
+  --transition: 0.2s ease;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+/* ─── Page-Specific Accent Overrides ────────────────────────────────────────── */
+.page-afk {
+  --bg-primary: #050810;
+  --bg-card: #0a0f1e;
+  --accent: #4f46e5;
+  --accent-light: #6d64f0;
+}
+
+.page-shop {
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+}
+
+.page-earn {
+  --accent: #10b981;
+  --accent-light: #34d399;
+}
+
+.page-redeem {
+  --accent: #8b5cf6;
+  --accent-light: #a78bfa;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--accent-light);
+}
+
+p {
+  color: var(--text-muted);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ─── Status Badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-active {
+  background: rgba(87, 242, 135, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(87, 242, 135, 0.3);
+}
+
+.badge-suspended {
+  background: rgba(237, 66, 69, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(237, 66, 69, 0.3);
+}
+
+.badge-installing {
+  background: rgba(254, 231, 92, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(254, 231, 92, 0.3);
+}
+
+.badge-deleted {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* ─── Coin Icon ─────────────────────────────────────────────────────────────── */
+.coin-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.coin-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* ─── Animated Coin Counter ─────────────────────────────────────────────────── */
+.coin-counter {
+  font-family: var(--font-primary);
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--warning);
+  transition: all 0.3s ease;
+  text-shadow: 0 0 30px rgba(254, 231, 92, 0.4);
+  letter-spacing: -1px;
+}
+
+.coin-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--warning);
+  transition: color var(--transition);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(88, 101, 242, 0.3);
+  color: var(--text-primary);
+}
