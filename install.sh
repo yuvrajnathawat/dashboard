@@ -117,12 +117,34 @@ if ! command -v mysql &>/dev/null; then
   warn "MySQL not found — installing MariaDB automatically..."
   apt-get update -qq
   apt-get install -y mariadb-server
-  systemctl start mariadb
-  systemctl enable mariadb
-  ok "MariaDB installed and started."
 fi
 
-ok "MySQL/MariaDB: found"
+# Start MariaDB — handle both systemd and non-systemd (Docker) environments
+if ! mysqladmin ping --silent 2>/dev/null; then
+  info "Starting MariaDB..."
+  if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null 2>&1; then
+    systemctl start mariadb 2>/dev/null || service mariadb start 2>/dev/null || true
+    systemctl enable mariadb 2>/dev/null || true
+  else
+    # Docker / container environment — use service or start directly
+    service mariadb start 2>/dev/null || \
+    mysqld_safe --datadir=/var/lib/mysql &>/dev/null & sleep 3
+  fi
+  # Wait for MariaDB to be ready
+  for i in $(seq 1 15); do
+    if mysqladmin ping --silent 2>/dev/null; then
+      break
+    fi
+    sleep 1
+  done
+fi
+
+if mysqladmin ping --silent 2>/dev/null; then
+  ok "MySQL/MariaDB: running"
+else
+  err "MariaDB failed to start. Try running: service mariadb start"
+  exit 1
+fi
 
 # PM2 — auto-install if missing
 if ! command -v pm2 &>/dev/null; then
@@ -329,7 +351,7 @@ NGINX_CONF
   # Remove default site if it exists to avoid conflicts
   rm -f /etc/nginx/sites-enabled/default
 
-  nginx -t && systemctl reload nginx
+  nginx -t && (systemctl reload nginx 2>/dev/null || service nginx reload 2>/dev/null || nginx -s reload 2>/dev/null || true)
   ok "Nginx configured and reloaded for $DOMAIN"
 
   echo -e ""
