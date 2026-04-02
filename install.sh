@@ -30,9 +30,9 @@ echo -e ""
 
 # ─────────────────────────────────────────────
 #  BOOTSTRAP — Clone repo if running via curl
-#  (i.e. we are NOT already inside the project)
+#  Guard: FREENODE_BOOTSTRAPPED prevents re-entry
 # ─────────────────────────────────────────────
-if [ ! -f "package.json" ]; then
+if [ -z "$FREENODE_BOOTSTRAPPED" ]; then
   info "Cloning FreeNode Dashboard from GitHub..."
 
   if ! command -v git &>/dev/null; then
@@ -42,15 +42,17 @@ if [ ! -f "package.json" ]; then
 
   if [ -d "$INSTALL_DIR" ]; then
     warn "Directory $INSTALL_DIR already exists — pulling latest changes..."
-    git -C "$INSTALL_DIR" pull
+    git -C "$INSTALL_DIR" pull --ff-only 2>/dev/null || git -C "$INSTALL_DIR" pull
   else
     git clone "$GITHUB_REPO" "$INSTALL_DIR"
   fi
 
-  ok "Repository cloned to $INSTALL_DIR"
-  info "Re-running installer from project directory..."
+  ok "Repository ready at $INSTALL_DIR"
+  info "Starting installer from project directory..."
   echo -e ""
-  exec bash "$INSTALL_DIR/install.sh"
+  export FREENODE_BOOTSTRAPPED=1
+  cd "$INSTALL_DIR"
+  exec bash install.sh
 fi
 
 # ─────────────────────────────────────────────
