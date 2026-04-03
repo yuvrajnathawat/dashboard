@@ -57,6 +57,9 @@ router.post('/:id/toggle', async (req, res) => {
 // POST /:id/delete
 router.post('/:id/delete', async (req, res) => {
   await pool.execute('DELETE FROM announcements WHERE id = ?', [req.params.id]);
+  if (req.headers['x-csrf-token'] || req.headers['content-type'] === 'application/json') {
+    return res.json({ success: true });
+  }
   req.flash('success', 'Announcement deleted.');
   return res.redirect('/admin/announcements');
 });

@@ -96,12 +96,10 @@
           <td style="display:flex;gap:8px;">
             <form method="POST" action="/admin/announcements/<%= item.id %>/toggle">
               <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-              <button class="btn btn-ghost btn-sm"><%= item.is_active ? 'Disable' : 'Enable' %></button>
+              <button class="btn btn-ghost btn-sm" type="submit"><%= item.is_active ? 'Disable' : 'Enable' %></button>
             </form>
-            <form method="POST" action="/admin/announcements/<%= item.id %>/delete" onsubmit="return UI && UI.confirm ? false : confirm('Delete?')">
-              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-              <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;" type="submit">Delete</button>
-            </form>
+            <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;"
+              onclick="deleteAnnouncement(<%= item.id %>, this)">Delete</button>
           </td>
         </tr>
         <% }); %>
@@ -117,5 +115,33 @@ function toggleFields() {
   document.getElementById('embedField').style.display = type === 'video' ? 'block' : 'none';
   document.getElementById('thumbnailField').style.display = type === 'video' ? 'block' : 'none';
   document.getElementById('contentField').style.display = type === 'video' ? 'none' : 'block';
+}
+
+function deleteAnnouncement(id, btn) {
+  UI.confirm('Delete this announcement? This cannot be undone.', function() {
+    btn.disabled = true;
+    btn.textContent = '...';
+    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+    fetch('/admin/announcements/' + id + '/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+      credentials: 'same-origin'
+    })
+    .then(function(r) {
+      if (r.ok || r.redirected) {
+        UI.toast('Announcement deleted.', 'success');
+        setTimeout(function() { location.reload(); }, 800);
+      } else {
+        UI.toast('Failed to delete.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    })
+    .catch(function() {
+      UI.toast('Network error.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+    });
+  }, { title: 'Delete Announcement', confirmText: 'Delete', danger: true });
 }
 </script>
