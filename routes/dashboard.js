@@ -12,11 +12,13 @@ router.get('/', (req, res) => {
   if (req.isAuthenticated()) {
     return res.redirect('/dashboard');
   }
+  res.locals.layout = 'layouts/auth';
   return res.render('index');
 });
 
 // GET /login — render login page for unauthenticated users
 router.get('/login', (req, res) => {
+  res.locals.layout = 'layouts/auth';
   return res.render('index');
 });
 

@@ -72,6 +72,14 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
+app.set('layout extractScripts', true);
+app.set('layout extractStyles', true);
+
+// Allow views to override layout via res.locals.layout
+app.use((req, res, next) => {
+  res.locals.layout = 'layouts/main';
+  next();
+});
 
 // Routers
 app.use('/', dashboardRouter);
