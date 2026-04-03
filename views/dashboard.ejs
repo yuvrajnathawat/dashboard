@@ -185,45 +185,48 @@
 
 <script>
 function renewServer(serverId) {
-  if (!confirm('Renew this server? Coins will be deducted.')) return;
-  fetch('/servers/' + serverId + '/renew', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
-    },
-    credentials: 'same-origin'
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      location.reload();
-    } else {
-      alert(data.error || 'Renewal failed');
-    }
-  })
-  .catch(function() { alert('Network error. Please try again.'); });
+  UI.confirm('Renew this server? Coins will be deducted.', function() {
+    fetch('/servers/' + serverId + '/renew', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+      },
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        UI.toast('Server renewed successfully!', 'success');
+        setTimeout(function() { location.reload(); }, 1000);
+      } else {
+        UI.toast(data.error || 'Renewal failed', 'error');
+      }
+    })
+    .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
+  }, { title: 'Renew Server', confirmText: 'Renew', danger: false });
 }
 
 function resetPassword(serverId) {
-  if (!confirm('Reset your Pterodactyl panel password? A new password will be shown once.')) return;
-  fetch('/servers/' + serverId + '/reset-password', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
-    },
-    credentials: 'same-origin'
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      showCredentialsModal(data.email, data.password);
-    } else {
-      alert(data.error || 'Failed to reset password.');
-    }
-  })
-  .catch(function() { alert('Network error. Please try again.'); });
+  UI.confirm('Reset your Pterodactyl panel password? A new password will be shown once.', function() {
+    fetch('/servers/' + serverId + '/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+      },
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showCredentialsModal(data.email, data.password);
+      } else {
+        UI.toast(data.error || 'Failed to reset password.', 'error');
+      }
+    })
+    .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
+  }, { title: 'Reset Panel Password', confirmText: 'Reset', danger: true });
 }
 
 function showCredentialsModal(email, password) {

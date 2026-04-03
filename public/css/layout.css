@@ -341,84 +341,56 @@
 }
 
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 200px 1fr;
+  }
+  .sidebar { width: 200px; }
+  .navbar  { left: 200px; }
+  .main-content { margin-left: 200px; }
+  .app-layout.sidebar-collapsed .navbar { left: 60px; }
+  .app-layout.sidebar-collapsed .main-content { margin-left: 60px; }
+}
+
 @media (max-width: 768px) {
   .app-layout {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "navbar"
-      "main";
+    grid-template-areas: "navbar" "main";
   }
-
-  .app-layout.sidebar-collapsed {
-    grid-template-columns: 1fr;
-  }
+  .app-layout.sidebar-collapsed { grid-template-columns: 1fr; }
 
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.25s ease, width 0.25s ease;
+    width: 260px;
   }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-    width: 240px;
-  }
-
-  .sidebar--collapsed {
-    width: 240px;
-  }
-
+  .sidebar.mobile-open { transform: translateX(0); width: 260px; }
+  .sidebar--collapsed  { width: 260px; }
   .sidebar--collapsed .sidebar-label,
   .sidebar--collapsed .sidebar-section-title,
   .sidebar--collapsed .sidebar-logo-text {
-    opacity: 1;
-    pointer-events: auto;
-    width: auto;
-    overflow: visible;
+    opacity: 1; pointer-events: auto; width: auto; overflow: visible;
   }
 
-  .sidebar-overlay.active {
-    display: block;
-  }
-
-  .navbar {
-    left: 0;
-  }
-
-  .app-layout.sidebar-collapsed .navbar {
-    left: 0;
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .app-layout.sidebar-collapsed .main-content {
-    margin-left: 0;
-  }
-
-  .hamburger-btn {
-    display: flex;
-  }
-
-  .sidebar-toggle {
-    display: none;
-  }
+  .sidebar-overlay.active { display: block; }
+  .navbar { left: 0; }
+  .app-layout.sidebar-collapsed .navbar { left: 0; }
+  .main-content { margin-left: 0; }
+  .app-layout.sidebar-collapsed .main-content { margin-left: 0; }
+  .hamburger-btn { display: flex; }
+  .sidebar-toggle { display: none; }
 }
 
 @media (max-width: 480px) {
-  .main-content {
-    padding: 16px;
-  }
+  .main-content { padding: 14px; }
+  .auth-card    { padding: 22px; }
+  .navbar       { padding: 0 14px; }
+  .navbar-username { display: none; }
+  .navbar-title { font-size: 14px; }
+  .page-header h1 { font-size: 20px; }
+}
 
-  .auth-card {
-    padding: 24px;
-  }
-
-  .navbar {
-    padding: 0 16px;
-  }
-
-  .navbar-username {
-    display: none;
-  }
+@media (max-width: 360px) {
+  .main-content { padding: 10px; }
+  .navbar-coins { display: none; }
 }

@@ -11,8 +11,6 @@
   coins
 </div>
 
-<div id="shopMessage" style="display: none; margin-bottom: 16px;"></div>
-
 <% if (!items || items.length === 0) { %>
 <div class="card">
   <div class="empty-state">
@@ -28,19 +26,15 @@
     var canAfford = (user.coins || 0) >= item.coin_cost;
     var iconMap = { ram: '💾', cpu: '⚡', disk: '💿', servers: '🖥️' };
     var icon = iconMap[item.resource_type] || '📦';
+    var typeLabel = { ram: 'MB RAM', cpu: '% CPU', disk: 'MB Disk', servers: ' Server Slot' }[item.resource_type] || '';
   %>
   <div class="shop-card">
     <div class="shop-card-icon"><%= icon %></div>
     <div class="shop-card-name"><%= item.name %></div>
-    <div class="shop-card-desc"><%= item.description %></div>
+    <% if (item.description) { %><div class="shop-card-desc"><%= item.description %></div><% } %>
 
     <div style="font-size: 12px; color: var(--text-muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;">
-      +<%= item.resource_amount %>
-      <% if (item.resource_type === 'ram') { %>MB RAM
-      <% } else if (item.resource_type === 'cpu') { %>% CPU
-      <% } else if (item.resource_type === 'disk') { %>MB Disk
-      <% } else if (item.resource_type === 'servers') { %> Server Slot<%= item.resource_amount !== 1 ? 's' : '' %>
-      <% } %>
+      +<%= item.resource_amount %><%= typeLabel %><%= item.resource_type === 'servers' && item.resource_amount !== 1 ? 's' : '' %>
     </div>
 
     <div class="shop-card-price">
@@ -57,6 +51,8 @@
       data-item-id="<%= item.id %>"
       data-item-name="<%= item.name %>"
       data-item-cost="<%= item.coin_cost %>"
+      data-resource-type="<%= item.resource_type %>"
+      data-resource-amount="<%= item.resource_amount %>"
       <% if (!canAfford) { %>disabled title="Insufficient coins"<% } %>
     >
       <% if (canAfford) { %>Buy Now<% } else { %>Need <%= (item.coin_cost - (user.coins || 0)).toLocaleString() %> more<% } %>
@@ -66,59 +62,138 @@
 </div>
 <% } %>
 
+<!-- Server Upgrade Modal -->
+<div id="upgradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:460px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.6);animation:modalIn 0.2s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="font-family:var(--font-primary);font-size:17px;font-weight:600;color:var(--text-primary);" id="upgradeTitle">Apply Upgrade</h3>
+      <button onclick="closeUpgradeModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:22px;line-height:1;padding:2px;">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;" id="upgradeDesc">Choose where to apply this upgrade.</p>
+
+    <div id="upgradeServerList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;max-height:260px;overflow-y:auto;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeUpgradeModal()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:14px;cursor:pointer;">Cancel</button>
+      <button id="upgradeConfirmBtn" onclick="confirmUpgrade()" style="padding:9px 20px;border-radius:8px;border:none;background:var(--warning,#FEE75C);color:#0d0f14;font-size:14px;font-weight:600;cursor:pointer;" disabled>Apply Upgrade</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
-  var msgEl = document.getElementById('shopMessage');
   var balanceEl = document.getElementById('shopBalance');
+  var pendingItemId = null;
+  var pendingServerId = null;
+  var servers = [];
 
-  function showMessage(text, type) {
-    msgEl.className = 'alert alert-' + type;
-    msgEl.textContent = text;
-    msgEl.style.display = 'flex';
-    setTimeout(function() { msgEl.style.display = 'none'; }, 5000);
+  // Fetch user's servers once
+  fetch('/shop/servers', { credentials: 'same-origin' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { servers = data.servers || []; })
+    .catch(function() {});
+
+  function openUpgradeModal(itemId, itemName, resourceType, resourceAmount) {
+    pendingItemId = itemId;
+    pendingServerId = null;
+
+    var typeLabel = { ram: 'MB RAM', cpu: '% CPU', disk: 'MB Disk', servers: ' Server Slot(s)' }[resourceType] || '';
+    document.getElementById('upgradeTitle').textContent = 'Apply: ' + itemName;
+    document.getElementById('upgradeDesc').textContent = 'This adds +' + resourceAmount + typeLabel + ' to your account. Optionally apply it to an existing server too.';
+
+    var list = document.getElementById('upgradeServerList');
+    list.innerHTML = '';
+
+    // "Account only" option
+    var accountOpt = makeServerOption(null, '👤 Account limit only', 'Increases your max resource limit without touching any server.');
+    list.appendChild(accountOpt);
+
+    if (servers.length > 0 && (resourceType === 'ram' || resourceType === 'cpu' || resourceType === 'disk')) {
+      servers.forEach(function(s) {
+        var sub = s.ram_mb + 'MB RAM · ' + s.cpu_percent + '% CPU · ' + Math.round(s.disk_mb/1024) + 'GB Disk';
+        var opt = makeServerOption(s.id, '🖥️ ' + s.name, sub);
+        list.appendChild(opt);
+      });
+    }
+
+    document.getElementById('upgradeModal').style.display = 'flex';
+    document.getElementById('upgradeConfirmBtn').disabled = false;
+    selectServerOption(null);
   }
+
+  function makeServerOption(serverId, title, subtitle) {
+    var div = document.createElement('div');
+    div.dataset.serverId = serverId === null ? '' : serverId;
+    div.style.cssText = 'padding:12px 14px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:border-color 0.15s,background 0.15s;';
+    div.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--text-primary);">' + title + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + subtitle + '</div>';
+    div.addEventListener('click', function() {
+      selectServerOption(serverId);
+    });
+    return div;
+  }
+
+  function selectServerOption(serverId) {
+    pendingServerId = serverId;
+    document.querySelectorAll('#upgradeServerList > div').forEach(function(el) {
+      var id = el.dataset.serverId === '' ? null : Number(el.dataset.serverId);
+      var selected = (id === serverId) || (serverId === null && el.dataset.serverId === '');
+      el.style.borderColor = selected ? 'var(--warning,#FEE75C)' : 'var(--border)';
+      el.style.background = selected ? 'rgba(254,231,92,0.07)' : '';
+    });
+  }
+
+  function closeUpgradeModal() {
+    document.getElementById('upgradeModal').style.display = 'none';
+    pendingItemId = null;
+    pendingServerId = null;
+  }
+
+  window.closeUpgradeModal = closeUpgradeModal;
+
+  window.confirmUpgrade = function() {
+    if (!pendingItemId) return;
+    var btn = document.getElementById('upgradeConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Applying...';
+
+    fetch('/shop/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
+      body: JSON.stringify({ item_id: pendingItemId, server_id: pendingServerId }),
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      closeUpgradeModal();
+      if (data.success) {
+        if (data.newBalance !== undefined && balanceEl) balanceEl.textContent = data.newBalance.toLocaleString();
+        UI.toast('Upgrade applied successfully!', 'success');
+        setTimeout(function() { location.reload(); }, 1200);
+      } else {
+        UI.toast(data.error || 'Purchase failed.', 'error');
+      }
+    })
+    .catch(function() {
+      closeUpgradeModal();
+      UI.toast('Network error. Please try again.', 'error');
+    });
+  };
 
   document.querySelectorAll('.buy-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var itemId = this.dataset.itemId;
       var itemName = this.dataset.itemName;
-      var itemCost = parseInt(this.dataset.itemCost);
-
-      if (!confirm('Purchase "' + itemName + '" for ' + itemCost.toLocaleString() + ' coins?')) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Purchasing...';
-
-      fetch('/shop/buy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken
-        },
-        body: JSON.stringify({ item_id: itemId }),
-        credentials: 'same-origin'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          showMessage('✓ Purchased "' + itemName + '" successfully!', 'success');
-          if (data.newBalance !== undefined && balanceEl) {
-            balanceEl.textContent = data.newBalance.toLocaleString();
-          }
-          setTimeout(function() { location.reload(); }, 1500);
-        } else {
-          showMessage(data.error || 'Purchase failed.', 'error');
-          btn.disabled = false;
-          btn.textContent = 'Buy Now';
-        }
-      })
-      .catch(function() {
-        showMessage('Network error. Please try again.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Buy Now';
-      });
+      var resourceType = this.dataset.resourceType;
+      var resourceAmount = parseInt(this.dataset.resourceAmount);
+      openUpgradeModal(itemId, itemName, resourceType, resourceAmount);
     });
+  });
+
+  // Close on backdrop
+  document.getElementById('upgradeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeUpgradeModal();
   });
 })();
 </script>

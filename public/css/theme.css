@@ -3,21 +3,21 @@
 
 /* ─── CSS Custom Properties ─────────────────────────────────────────────────── */
 :root {
-  --bg-primary: #0d0f14;
-  --bg-card: #161922;
+  --bg-primary: #0b0d12;
+  --bg-card: #13161e;
   --accent: #5865F2;
   --accent-light: #7983f5;
   --success: #57F287;
   --warning: #FEE75C;
   --danger: #ED4245;
-  --text-primary: #e2e8f0;
-  --text-muted: #94a3b8;
-  --border: rgba(255, 255, 255, 0.08);
+  --text-primary: #e4eaf4;
+  --text-muted: #8b97b0;
+  --border: rgba(255, 255, 255, 0.07);
   --font-primary: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   --font-secondary: 'Inter', sans-serif;
   --transition: 0.2s ease;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-sm: 9px;
 }
 
 /* ─── Page-Specific Accent Overrides ────────────────────────────────────────── */

@@ -101,6 +101,25 @@ async function deleteUser(pteroUserId) {
 }
 
 /**
+ * Update server build limits (memory, cpu, disk, etc.)
+ * @param {number} serverId - Pterodactyl server ID
+ * @param {object} limits - { memory, cpu, disk, swap, io }
+ */
+async function updateServerBuild(serverId, limits) {
+  return call(async () => {
+    await appApi.patch(`/api/application/servers/${serverId}/build`, {
+      allocation: limits.allocation,
+      memory: limits.memory,
+      swap: limits.swap || 0,
+      disk: limits.disk,
+      io: limits.io || 500,
+      cpu: limits.cpu,
+      feature_limits: { databases: 0, backups: 0 },
+    });
+  }, 'updateServerBuild');
+}
+
+/**
  * Create a server on the Pterodactyl panel.
  * @param {Object} opts - Full server creation payload
  * @returns {Object} server data from Pterodactyl
@@ -251,6 +270,7 @@ module.exports = {
   deleteUser,
   resetUserPassword,
   createServer,
+  updateServerBuild,
   suspendServer,
   unsuspendServer,
   deleteServer,
