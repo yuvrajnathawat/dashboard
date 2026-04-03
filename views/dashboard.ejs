@@ -218,7 +218,7 @@ function resetPassword(serverId) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) {
-      alert('Password reset!\n\nNew password: ' + data.password + '\n\nSave this — it will not be shown again.');
+      alert('Password reset!\n\nPanel Email: ' + data.email + '\nNew Password: ' + data.password + '\n\nSave this — it will not be shown again.');
     } else {
       alert(data.error || 'Failed to reset password.');
     }

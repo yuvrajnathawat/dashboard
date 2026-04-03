@@ -358,7 +358,7 @@ router.post(
       // Update on Pterodactyl
       await pterodactylService.resetUserPassword(req.user.ptero_user_id, req.user.discord_id, newPassword);
 
-      return res.json({ success: true, password: newPassword });
+      return res.json({ success: true, password: newPassword, email: `${req.user.discord_id}@freenode.local` });
     } catch (err) {
       console.error('Reset password error:', err);
       return res.status(500).json({ error: 'Failed to reset password.' });
