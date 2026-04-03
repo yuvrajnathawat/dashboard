@@ -210,6 +210,19 @@ async function getAvailableAllocations(nodeId) {
 // ─── Client API operations ────────────────────────────────────────────────────
 
 /**
+ * Reset a Pterodactyl user's password by their panel user ID.
+ * @param {number} pteroUserId
+ * @param {string} newPassword
+ */
+async function resetUserPassword(pteroUserId, newPassword) {
+  return call(async () => {
+    await appApi.patch(`/api/application/users/${pteroUserId}`, {
+      password: newPassword,
+    });
+  }, 'resetUserPassword');
+}
+
+/**
  * Get resource usage for a server by its UUID.
  * @returns {{ current_state: string, resources: Object }}
  */
@@ -227,6 +240,7 @@ module.exports = {
   PterodactylError,
   createUser,
   deleteUser,
+  resetUserPassword,
   createServer,
   suspendServer,
   unsuspendServer,

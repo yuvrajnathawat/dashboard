@@ -137,12 +137,35 @@
 
     <div class="server-card-actions">
       <% if (server.status !== 'deleted') { %>
+      <a
+        href="/servers/<%= server.id %>/panel"
+        class="btn btn-success btn-sm"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        View Panel
+      </a>
       <button
         class="btn btn-primary btn-sm"
         onclick="renewServer(<%= server.id %>)"
         <% if (server.status === 'suspended') { %>title="Renew to unsuspend"<% } %>
       >
         Renew
+      </button>
+      <button
+        class="btn btn-ghost btn-sm"
+        onclick="resetPassword(<%= server.id %>)"
+        title="Reset your Pterodactyl panel password"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Reset Password
       </button>
       <% } %>
     </div>
@@ -177,6 +200,27 @@ function renewServer(serverId) {
       location.reload();
     } else {
       alert(data.error || 'Renewal failed');
+    }
+  })
+  .catch(function() { alert('Network error. Please try again.'); });
+}
+
+function resetPassword(serverId) {
+  if (!confirm('Reset your Pterodactyl panel password? A new password will be shown once.')) return;
+  fetch('/servers/' + serverId + '/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+    },
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      alert('Password reset!\n\nNew password: ' + data.password + '\n\nSave this — it will not be shown again.');
+    } else {
+      alert(data.error || 'Failed to reset password.');
     }
   })
   .catch(function() { alert('Network error. Please try again.'); });

@@ -315,6 +315,57 @@ router.post(
   }
 );
 
+// ─── GET /servers/:id/panel ───────────────────────────────────────────────────
+
+router.get('/:id/panel', isAuthenticated, async (req, res) => {
+  const serverId = Number(req.params.id);
+  const userId = req.user.id;
+
+  const [rows] = await pool.execute(
+    'SELECT * FROM servers WHERE id = ? AND user_id = ?',
+    [serverId, userId]
+  );
+  if (!rows.length) return res.status(404).render('error', { message: 'Server not found.' });
+
+  const panelUrl = `${process.env.PTERODACTYL_URL}/server/${rows[0].ptero_server_uuid}`;
+  return res.redirect(panelUrl);
+});
+
+// ─── POST /servers/:id/reset-password ────────────────────────────────────────
+
+router.post(
+  '/:id/reset-password',
+  isAuthenticated,
+  [param('id').toInt().isInt({ min: 1 })],
+  async (req, res) => {
+    const paramErrors = validationResult(req);
+    if (!paramErrors.isEmpty()) return res.status(400).json({ error: 'Invalid server ID.' });
+
+    const serverId = Number(req.params.id);
+    const userId = req.user.id;
+
+    try {
+      // Verify ownership
+      const [rows] = await pool.execute(
+        'SELECT * FROM servers WHERE id = ? AND user_id = ?',
+        [serverId, userId]
+      );
+      if (!rows.length) return res.status(404).json({ error: 'Server not found.' });
+
+      // Generate a random 16-char password
+      const newPassword = require('crypto').randomBytes(8).toString('hex');
+
+      // Update on Pterodactyl
+      await pterodactylService.resetUserPassword(req.user.ptero_user_id, newPassword);
+
+      return res.json({ success: true, password: newPassword });
+    } catch (err) {
+      console.error('Reset password error:', err);
+      return res.status(500).json({ error: 'Failed to reset password.' });
+    }
+  }
+);
+
 // ─── POST /servers/:id/renew ──────────────────────────────────────────────────
 
 router.post(
