@@ -140,16 +140,40 @@ do_set_admin() {
     return
   fi
 
-  DB_USER=$(grep "^DB_USER=" "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2)
-  DB_PASS=$(grep "^DB_PASSWORD=" "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2)
-  DB_NAME=$(grep "^DB_NAME=" "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2)
+  if [ ! -f "$INSTALL_DIR/.env" ]; then
+    err ".env file not found at $INSTALL_DIR/.env"
+    return
+  fi
 
-  mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "UPDATE users SET is_admin = 1 WHERE discord_id = '$DISCORD_ID';" 2>/dev/null
+  DB_USER=$(grep "^DB_USER=" "$INSTALL_DIR/.env" | cut -d= -f2 | tr -d '[:space:]')
+  DB_PASS=$(grep "^DB_PASSWORD=" "$INSTALL_DIR/.env" | cut -d= -f2 | tr -d '[:space:]')
+  DB_NAME=$(grep "^DB_NAME=" "$INSTALL_DIR/.env" | cut -d= -f2 | tr -d '[:space:]')
 
-  ROWS=$(mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "SELECT COUNT(*) FROM users WHERE discord_id = '$DISCORD_ID' AND is_admin = 1;" 2>/dev/null)
+  info "Connecting to database..."
+
+  # Write temp mysql config to avoid password in command line
+  MYSQL_CNF=$(mktemp)
+  cat > "$MYSQL_CNF" <<EOF
+[client]
+user=${DB_USER}
+password=${DB_PASS}
+EOF
+  chmod 600 "$MYSQL_CNF"
+
+  mysql --defaults-file="$MYSQL_CNF" "$DB_NAME" -e "UPDATE users SET is_admin = 1 WHERE discord_id = '${DISCORD_ID}';" 2>/tmp/mysql_err
+
+  if [ $? -ne 0 ]; then
+    err "MySQL error: $(cat /tmp/mysql_err)"
+    rm -f "$MYSQL_CNF"
+    return
+  fi
+
+  ROWS=$(mysql --defaults-file="$MYSQL_CNF" "$DB_NAME" -se "SELECT COUNT(*) FROM users WHERE discord_id = '${DISCORD_ID}' AND is_admin = 1;" 2>/dev/null)
+  rm -f "$MYSQL_CNF"
 
   if [ "$ROWS" = "1" ]; then
-    ok "User $DISCORD_ID is now admin. Logout and login again on the dashboard."
+    ok "User $DISCORD_ID is now admin permanently!"
+    info "No need to logout/login — admin status is saved in DB and won't be removed."
   else
     err "User not found. Make sure they have logged in at least once."
   fi

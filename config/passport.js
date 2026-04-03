@@ -14,7 +14,7 @@ module.exports = function (passport) {
         callbackURL: process.env.DISCORD_CALLBACK_URL,
         scope: ['identify', 'guilds'],
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (_accessToken, _refreshToken, profile, done) => {
         try {
           // 1. Guild membership check
           if (process.env.REQUIRED_GUILD_ID) {
@@ -27,12 +27,6 @@ module.exports = function (passport) {
             }
           }
 
-          // Determine admin status from env var
-          const adminIds = process.env.ADMIN_DISCORD_IDS
-            ? process.env.ADMIN_DISCORD_IDS.split(',').map((id) => id.trim())
-            : [];
-          const isAdmin = adminIds.includes(profile.id) ? 1 : 0;
-
           // 2. Look up existing user
           const [rows] = await pool.query(
             'SELECT * FROM users WHERE discord_id = ?',
@@ -40,30 +34,31 @@ module.exports = function (passport) {
           );
 
           if (rows.length > 0) {
-            // 3. Returning user — update profile and admin flag
             const user = rows[0];
 
-            await pool.query(
-              'UPDATE users SET username = ?, avatar = ?, is_admin = ? WHERE id = ?',
-              [profile.username, profile.avatar || null, isAdmin, user.id]
-            );
-
             if (user.is_suspended) {
-              return done(null, false, {
-                message: 'Your account has been suspended.',
-              });
+              return done(null, false, { message: 'Your account has been suspended.' });
             }
 
-            // Return updated user object
+            // Update only username and avatar — DO NOT touch is_admin (managed via DB/script)
+            await pool.query(
+              'UPDATE users SET username = ?, avatar = ? WHERE id = ?',
+              [profile.username, profile.avatar || null, user.id]
+            );
+
             return done(null, {
               ...user,
               username: profile.username,
               avatar: profile.avatar || null,
-              is_admin: isAdmin,
             });
           }
 
-          // 4. First login — create new user
+          // 3. First login — check if this Discord ID is in ADMIN_DISCORD_IDS env
+          const adminIds = process.env.ADMIN_DISCORD_IDS
+            ? process.env.ADMIN_DISCORD_IDS.split(',').map((id) => id.trim())
+            : [];
+          const isAdmin = adminIds.includes(profile.id) ? 1 : 0;
+
           // Get default settings
           const [settingRows] = await pool.query(
             "SELECT `key`, value FROM settings WHERE `key` IN ('default_ram_mb', 'default_cpu_percent', 'default_disk_mb', 'max_servers_per_user')"
@@ -79,10 +74,8 @@ module.exports = function (passport) {
           const defaultDisk = settings.default_disk_mb || 5120;
           const maxServers = settings.max_servers_per_user || 2;
 
-          // Generate random password for Pterodactyl account
           const password = crypto.randomBytes(16).toString('hex');
 
-          // Try to create Pterodactyl account — non-fatal if it fails
           let pteroUserId = null;
           try {
             const pteroData = await pterodactylService.createUser(
@@ -97,7 +90,6 @@ module.exports = function (passport) {
             console.warn('[passport] Pterodactyl createUser failed (non-fatal):', pteroErr.message);
           }
 
-          // Insert new user into DB
           const [result] = await pool.query(
             `INSERT INTO users
               (discord_id, username, avatar, ptero_user_id, coins, max_servers, max_ram_mb, max_cpu_percent, max_disk_mb, is_admin)
@@ -115,7 +107,7 @@ module.exports = function (passport) {
             ]
           );
 
-          const newUser = {
+          return done(null, {
             id: result.insertId,
             discord_id: profile.id,
             username: profile.username,
@@ -128,9 +120,7 @@ module.exports = function (passport) {
             max_disk_mb: defaultDisk,
             is_admin: isAdmin,
             is_suspended: 0,
-          };
-
-          return done(null, newUser);
+          });
         } catch (err) {
           return done(err);
         }
@@ -142,28 +132,11 @@ module.exports = function (passport) {
     done(null, user.id);
   });
 
+  // Deserialize — always read fresh from DB, never override is_admin
   passport.deserializeUser(async (id, done) => {
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
-      if (rows.length === 0) {
-        return done(null, null);
-      }
-
-      const user = rows[0];
-
-      // Re-check admin status from env var on every session load
-      const adminIds = process.env.ADMIN_DISCORD_IDS
-        ? process.env.ADMIN_DISCORD_IDS.split(',').map((id) => id.trim())
-        : [];
-      const isAdmin = adminIds.includes(user.discord_id) ? 1 : 0;
-
-      // Update DB if admin status changed
-      if (user.is_admin !== isAdmin) {
-        await pool.query('UPDATE users SET is_admin = ? WHERE id = ?', [isAdmin, user.id]);
-        user.is_admin = isAdmin;
-      }
-
-      done(null, user);
+      done(null, rows[0] || null);
     } catch (err) {
       done(err);
     }
