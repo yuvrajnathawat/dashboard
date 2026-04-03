@@ -105,46 +105,63 @@
 <% } %>
 
 <script>
-var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+document.addEventListener('DOMContentLoaded', function() {
+  var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
 
-function postJSON(url, data, resultId) {
-  fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
-    body: JSON.stringify(data),
-    credentials: 'same-origin'
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
+  function postJSON(url, data, resultId) {
     var el = document.getElementById(resultId);
-    if (res.success) {
-      el.style.color = 'var(--success)';
-      el.textContent = '✓ Done!' + (res.newBalance !== undefined ? ' New balance: ' + res.newBalance.toLocaleString() : '') + (res.count !== undefined ? ' Credited ' + res.count + ' users.' : '');
-      setTimeout(function() { location.reload(); }, 1500);
-    } else {
-      el.style.color = 'var(--danger)';
-      el.textContent = res.error || 'Failed.';
-    }
-  });
-}
+    if (el) { el.textContent = 'Sending...'; el.style.color = 'var(--text-muted)'; }
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
+      body: JSON.stringify(data),
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!el) return;
+      if (res.success) {
+        el.style.color = 'var(--success)';
+        el.textContent = '✓ Done!' + (res.newBalance !== undefined ? ' New balance: ' + res.newBalance.toLocaleString() : '') + (res.count !== undefined ? ' Credited ' + res.count + ' users.' : '');
+        setTimeout(function() { location.reload(); }, 1500);
+      } else {
+        el.style.color = 'var(--danger)';
+        el.textContent = res.error || 'Failed.';
+      }
+    })
+    .catch(function(err) {
+      if (el) { el.style.color = 'var(--danger)'; el.textContent = 'Error: ' + err.message; }
+    });
+  }
 
-document.getElementById('giveForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  var fd = new FormData(this);
-  postJSON('/admin/coins/give', {
-    user_id: parseInt(fd.get('user_id')),
-    amount: parseInt(fd.get('amount')),
-    reason: fd.get('reason') || 'Admin adjustment'
-  }, 'giveResult');
-});
+  var giveForm = document.getElementById('giveForm');
+  if (giveForm) {
+    giveForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var fd = new FormData(this);
+      postJSON('/admin/coins/give', {
+        user_id: parseInt(fd.get('user_id')),
+        amount: parseInt(fd.get('amount')),
+        reason: fd.get('reason') || 'Admin adjustment'
+      }, 'giveResult');
+      return false;
+    });
+  }
 
-document.getElementById('broadcastForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  if (!confirm('Broadcast coins to ALL users?')) return;
-  var fd = new FormData(this);
-  postJSON('/admin/coins/broadcast', {
-    amount: parseInt(fd.get('amount')),
-    reason: fd.get('reason') || 'Admin broadcast'
-  }, 'broadcastResult');
+  var broadcastForm = document.getElementById('broadcastForm');
+  if (broadcastForm) {
+    broadcastForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!confirm('Broadcast coins to ALL users?')) return false;
+      var fd = new FormData(this);
+      postJSON('/admin/coins/broadcast', {
+        amount: parseInt(fd.get('amount')),
+        reason: fd.get('reason') || 'Admin broadcast'
+      }, 'broadcastResult');
+      return false;
+    });
+  }
 });
 </script>

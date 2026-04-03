@@ -113,45 +113,63 @@
 </div>
 
 <script>
-var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+document.addEventListener('DOMContentLoaded', function() {
+  var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
 
-function postForm(url, formEl, resultEl) {
-  var data = {};
-  new FormData(formEl).forEach(function(v, k) { if (v) data[k] = v; });
-  fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
-    body: JSON.stringify(data),
-    credentials: 'same-origin'
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
-    var el = document.getElementById(resultEl);
-    if (res.success) {
-      el.style.color = 'var(--success)';
-      el.textContent = '✓ Done!';
-      setTimeout(function() { location.reload(); }, 1000);
-    } else {
-      el.style.color = 'var(--danger)';
-      el.textContent = res.error || 'Failed.';
-    }
-  });
-}
+  function postForm(url, formEl, resultElId) {
+    var data = {};
+    new FormData(formEl).forEach(function(v, k) { if (v !== '') data[k] = v; });
+    var resultEl = document.getElementById(resultElId);
+    if (resultEl) { resultEl.textContent = 'Sending...'; resultEl.style.color = 'var(--text-muted)'; }
 
-document.getElementById('createCodeForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  postForm('/admin/codes', this, 'createResult');
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
+      body: JSON.stringify(data),
+      credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!resultEl) return;
+      if (res.success) {
+        resultEl.style.color = 'var(--success)';
+        resultEl.textContent = '✓ Done!';
+        setTimeout(function() { location.reload(); }, 1000);
+      } else {
+        resultEl.style.color = 'var(--danger)';
+        resultEl.textContent = res.error || 'Failed.';
+      }
+    })
+    .catch(function(err) {
+      if (resultEl) { resultEl.style.color = 'var(--danger)'; resultEl.textContent = 'Network error: ' + err.message; }
+    });
+  }
+
+  var createForm = document.getElementById('createCodeForm');
+  if (createForm) {
+    createForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      postForm('/admin/codes', this, 'createResult');
+      return false;
+    });
+  }
+
+  var bulkForm = document.getElementById('bulkCodeForm');
+  if (bulkForm) {
+    bulkForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      postForm('/admin/codes/bulk', this, 'bulkResult');
+      return false;
+    });
+  }
+
+  window.deactivateCode = function(id) {
+    if (!confirm('Deactivate this code?')) return;
+    fetch('/admin/codes/' + id + '/deactivate', {
+      method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
+    }).then(function() { location.reload(); });
+  };
 });
-
-document.getElementById('bulkCodeForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  postForm('/admin/codes/bulk', this, 'bulkResult');
-});
-
-function deactivateCode(id) {
-  if (!confirm('Deactivate this code?')) return;
-  fetch('/admin/codes/' + id + '/deactivate', {
-    method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
-  }).then(function() { location.reload(); });
-}
 </script>
