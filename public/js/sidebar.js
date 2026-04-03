@@ -1,22 +1,32 @@
 /**
- * sidebar.js — Collapsible sidebar toggle with localStorage persistence
+ * sidebar.js — Collapsible sidebar with proper margin sync
  */
 (function () {
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
-    var sidebar = document.querySelector('.sidebar');
-    var appLayout = document.querySelector('.app-layout');
-    var toggleBtn = document.querySelector('.sidebar-toggle');
+    var sidebar    = document.querySelector('.sidebar');
+    var navbar     = document.querySelector('.navbar');
+    var mainContent= document.querySelector('.main-content');
+    var appLayout  = document.querySelector('.app-layout');
+    var toggleBtn  = document.querySelector('.sidebar-toggle');
     var hamburgerBtn = document.querySelector('.hamburger-btn');
-    var overlay = document.querySelector('.sidebar-overlay');
+    var overlay    = document.querySelector('.sidebar-overlay');
 
     if (!sidebar) return;
 
-    // ── Desktop collapse state ──────────────────────────────────────────────
-    var isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    var SIDEBAR_FULL = 240;
+    var SIDEBAR_COLLAPSED = 60;
+    var isMobile = function() { return window.innerWidth <= 768; };
 
+    // ── Apply collapsed state ───────────────────────────────────────────────
     function applyCollapsed(collapsed) {
+      if (isMobile()) return;
+      var w = collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_FULL;
+      sidebar.style.width = w + 'px';
+      if (navbar)      navbar.style.left = w + 'px';
+      if (mainContent) mainContent.style.marginLeft = w + 'px';
+
       if (collapsed) {
         sidebar.classList.add('sidebar--collapsed');
         if (appLayout) appLayout.classList.add('sidebar-collapsed');
@@ -26,6 +36,7 @@
       }
     }
 
+    var isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     applyCollapsed(isCollapsed);
 
     if (toggleBtn) {
@@ -59,23 +70,28 @@
       });
     }
 
-    if (overlay) {
-      overlay.addEventListener('click', closeMobileSidebar);
-    }
+    if (overlay) overlay.addEventListener('click', closeMobileSidebar);
 
-    // Close mobile sidebar on nav link click
-    var navLinks = sidebar.querySelectorAll('a');
-    navLinks.forEach(function (link) {
+    sidebar.querySelectorAll('a').forEach(function (link) {
       link.addEventListener('click', function () {
-        if (window.innerWidth <= 768) {
-          closeMobileSidebar();
-        }
+        if (isMobile()) closeMobileSidebar();
       });
+    });
+
+    // ── Re-apply on resize ──────────────────────────────────────────────────
+    window.addEventListener('resize', function () {
+      if (isMobile()) {
+        if (navbar)      navbar.style.left = '0';
+        if (mainContent) mainContent.style.marginLeft = '0';
+      } else {
+        closeMobileSidebar();
+        applyCollapsed(isCollapsed);
+      }
     });
 
     // ── Active link highlighting ────────────────────────────────────────────
     var currentPath = window.location.pathname;
-    navLinks.forEach(function (link) {
+    sidebar.querySelectorAll('a').forEach(function (link) {
       var href = link.getAttribute('href');
       if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
         link.classList.add('active');

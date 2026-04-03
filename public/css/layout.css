@@ -1,22 +1,11 @@
 /* ─── App Layout Grid ───────────────────────────────────────────────────────── */
 .app-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: 60px 1fr;
-  grid-template-areas:
-    "sidebar navbar"
-    "sidebar main";
+  display: block;
   min-height: 100vh;
-  transition: grid-template-columns 0.25s ease;
-}
-
-.app-layout.sidebar-collapsed {
-  grid-template-columns: 60px 1fr;
 }
 
 /* ─── Sidebar ───────────────────────────────────────────────────────────────── */
 .sidebar {
-  grid-area: sidebar;
   position: fixed;
   top: 0;
   left: 0;
@@ -178,7 +167,6 @@
 
 /* ─── Navbar ────────────────────────────────────────────────────────────────── */
 .navbar {
-  grid-area: navbar;
   position: fixed;
   top: 0;
   left: 240px;
@@ -194,6 +182,7 @@
   transition: left 0.25s ease;
 }
 
+.sidebar--collapsed ~ * .navbar,
 .app-layout.sidebar-collapsed .navbar {
   left: 60px;
 }
@@ -284,13 +273,13 @@
 
 /* ─── Main Content ──────────────────────────────────────────────────────────── */
 .main-content {
-  grid-area: main;
   margin-left: 240px;
   margin-top: 60px;
   padding: 24px;
   min-height: calc(100vh - 60px);
   transition: margin-left 0.25s ease;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .app-layout.sidebar-collapsed .main-content {
@@ -342,9 +331,6 @@
 
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .app-layout {
-    grid-template-columns: 200px 1fr;
-  }
   .sidebar { width: 200px; }
   .navbar  { left: 200px; }
   .main-content { margin-left: 200px; }
@@ -353,12 +339,6 @@
 }
 
 @media (max-width: 768px) {
-  .app-layout {
-    grid-template-columns: 1fr;
-    grid-template-areas: "navbar" "main";
-  }
-  .app-layout.sidebar-collapsed { grid-template-columns: 1fr; }
-
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.25s ease, width 0.25s ease;
@@ -373,10 +353,8 @@
   }
 
   .sidebar-overlay.active { display: block; }
-  .navbar { left: 0; }
-  .app-layout.sidebar-collapsed .navbar { left: 0; }
-  .main-content { margin-left: 0; }
-  .app-layout.sidebar-collapsed .main-content { margin-left: 0; }
+  .navbar { left: 0 !important; }
+  .main-content { margin-left: 0 !important; }
   .hamburger-btn { display: flex; }
   .sidebar-toggle { display: none; }
 }
