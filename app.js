@@ -115,6 +115,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Minify HTML response to make source less readable
+app.use((req, res, next) => {
+  const originalRender = res.render.bind(res);
+  res.render = function(view, options, callback) {
+    originalRender(view, options, function(err, html) {
+      if (err) return callback ? callback(err) : next(err);
+      // Strip HTML comments and collapse whitespace
+      const minified = html
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/>\s+</g, '><')
+        .trim();
+      if (callback) return callback(null, minified);
+      res.send(minified);
+    });
+  };
+  next();
+});
+
 // Routers
 app.use('/', dashboardRouter);
 app.use('/auth', authRouter);
