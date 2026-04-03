@@ -137,6 +137,22 @@ const tables = [
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
   },
+  {
+    name: 'announcements',
+    sql: `CREATE TABLE IF NOT EXISTS announcements (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      type ENUM('banner','video','promotion') NOT NULL DEFAULT 'banner',
+      content TEXT,
+      embed_url VARCHAR(500),
+      link_url VARCHAR(500),
+      link_text VARCHAR(100),
+      position ENUM('top','dashboard','sidebar') NOT NULL DEFAULT 'dashboard',
+      is_active BOOLEAN DEFAULT TRUE,
+      sort_order INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
 ];
 
 async function migrate() {

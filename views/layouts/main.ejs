@@ -25,6 +25,12 @@
     <%- include('../partials/sidebar') %>
     <%- include('../partials/navbar') %>
     <main class="main-content">
+      <!-- Top announcements -->
+      <% if (typeof announcements !== 'undefined') { %>
+        <% announcements.filter(function(a){ return a.position === 'top'; }).forEach(function(a) { %>
+        <%- include('../partials/announcement', { a: a }) %>
+        <% }); %>
+      <% } %>
       <%- include('../partials/flash') %>
       <%- body %>
     </main>

@@ -12,6 +12,7 @@ const coinsRouter = require('./coins');
 const settingsRouter = require('./settings');
 const shopRouter = require('./shop');
 const earnRouter = require('./earn');
+const announcementsRouter = require('./announcements');
 
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router.use('/coins', coinsRouter);
 router.use('/settings', settingsRouter);
 router.use('/shop', shopRouter);
 router.use('/earn', earnRouter);
+router.use('/announcements', announcementsRouter);
 
 // GET / — admin dashboard overview
 router.get('/', async (req, res) => {

@@ -1,5 +1,12 @@
 <% bodyClass = 'page-dashboard' %>
 
+<!-- Dashboard announcements -->
+<% if (typeof announcements !== 'undefined') { %>
+  <% announcements.filter(function(a){ return a.position === 'dashboard'; }).forEach(function(a) { %>
+  <%- include('./partials/announcement', { a: a }) %>
+  <% }); %>
+<% } %>
+
 <!-- Welcome Bar -->
 <div class="card" style="margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
   <% if (user.avatar) { %>

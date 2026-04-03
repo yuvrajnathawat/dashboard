@@ -79,6 +79,19 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Announcements middleware — passes active announcements to all views
+app.use(async (req, res, next) => {
+  try {
+    const [rows] = await pool.execute(
+      "SELECT * FROM announcements WHERE is_active = 1 ORDER BY sort_order ASC, id DESC"
+    );
+    res.locals.announcements = rows;
+  } catch (_) {
+    res.locals.announcements = [];
+  }
+  next();
+});
+
 // Template locals
 app.use((req, res, next) => {
   res.locals.user = req.user;

@@ -151,6 +151,15 @@
       <span class="sidebar-label">Earn Links</span>
     </a>
 
+    <a href="/admin/announcements">
+      <span class="nav-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </span>
+      <span class="sidebar-label">Announcements</span>
+    </a>
+
     <a href="/admin/settings">
       <span class="nav-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -164,6 +173,15 @@
   </div>
 
   <div class="sidebar-footer">
+    <% if (typeof announcements !== 'undefined') { %>
+      <% announcements.filter(function(a){ return a.position === 'sidebar'; }).forEach(function(a) { %>
+      <div style="margin:0 8px 8px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(88,101,242,0.08);font-size:12px;">
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:3px;"><%= a.title %></div>
+        <% if (a.content) { %><div style="color:var(--text-muted);line-height:1.4;"><%= a.content %></div><% } %>
+        <% if (a.link_url) { %><a href="<%= a.link_url %>" target="_blank" style="color:var(--accent);font-size:11px;margin-top:4px;display:inline-block;"><%= a.link_text || 'View' %> →</a><% } %>
+      </div>
+      <% }); %>
+    <% } %>
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"/>
