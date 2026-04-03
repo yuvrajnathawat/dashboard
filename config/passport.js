@@ -145,7 +145,25 @@ module.exports = function (passport) {
   passport.deserializeUser(async (id, done) => {
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
-      done(null, rows[0] || null);
+      if (rows.length === 0) {
+        return done(null, null);
+      }
+
+      const user = rows[0];
+
+      // Re-check admin status from env var on every session load
+      const adminIds = process.env.ADMIN_DISCORD_IDS
+        ? process.env.ADMIN_DISCORD_IDS.split(',').map((id) => id.trim())
+        : [];
+      const isAdmin = adminIds.includes(user.discord_id) ? 1 : 0;
+
+      // Update DB if admin status changed
+      if (user.is_admin !== isAdmin) {
+        await pool.query('UPDATE users SET is_admin = ? WHERE id = ?', [isAdmin, user.id]);
+        user.is_admin = isAdmin;
+      }
+
+      done(null, user);
     } catch (err) {
       done(err);
     }

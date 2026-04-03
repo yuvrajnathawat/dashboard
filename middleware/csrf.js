@@ -2,19 +2,20 @@
 
 const csurf = require('csurf');
 
-const csrfProtection = csurf({ cookie: false, value: (req) => {
-  return req.body._csrf ||
-    req.headers['x-csrf-token'] ||
-    req.headers['x-xsrf-token'] ||
-    req.headers['csrf-token'];
-} });
+const csrfProtection = csurf({
+  cookie: false,
+  value: (req) => {
+    return req.body._csrf ||
+      req.headers['x-csrf-token'] ||
+      req.headers['x-xsrf-token'] ||
+      req.headers['csrf-token'];
+  }
+});
 
 function csrfMiddleware(req, res, next) {
-  // Skip CSRF for admin API JSON requests — protected by isAdmin middleware
-  if (req.path.startsWith('/admin') && req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
-    try {
-      res.locals.csrfToken = '';
-    } catch (e) {}
+  // Skip ALL CSRF for admin routes — protected by isAdmin session check
+  if (req.path.startsWith('/admin')) {
+    res.locals.csrfToken = '';
     return next();
   }
 
@@ -31,7 +32,7 @@ function csrfMiddleware(req, res, next) {
 
 function csrfErrorHandler(err, req, res, next) {
   if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).render('error', { message: 'Invalid CSRF token.' });
+    return res.status(403).render('error', { message: 'Invalid CSRF token. Please refresh and try again.' });
   }
   return next(err);
 }

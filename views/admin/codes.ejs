@@ -1,3 +1,6 @@
+<style>
+.result-msg { margin-top: 10px; font-size: 13px; text-align: center; min-height: 20px; }
+</style>
 
 <div class="page-header">
   <h1>Redeem Codes</h1>
@@ -5,75 +8,55 @@
 </div>
 
 <div class="grid-2" style="margin-bottom: 24px;">
-  <!-- Create Single Code -->
   <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">Create Code</h2>
+    <div class="card-header"><h2 class="card-title">Create Single Code</h2></div>
+    <div class="form-group">
+      <label class="form-label">Code String</label>
+      <input type="text" id="c_code" class="form-input" placeholder="PROMO2024" style="text-transform:uppercase">
     </div>
-    <form id="createCodeForm">
-      <div class="form-group">
-        <label class="form-label">Code String</label>
-        <input type="text" name="code" class="form-input" placeholder="PROMO2024" style="text-transform: uppercase;" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Coin Reward</label>
-        <input type="number" name="coin_reward" class="form-input" placeholder="100" min="0" value="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Max Uses (blank = unlimited)</label>
-        <input type="number" name="max_uses" class="form-input" placeholder="Leave blank for unlimited" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Expires At (optional)</label>
-        <input type="datetime-local" name="expires_at" class="form-input">
-      </div>
-      <button type="submit" class="btn btn-primary" style="width: 100%;">Create Code</button>
-      <div id="createResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
-    </form>
+    <div class="form-group">
+      <label class="form-label">Coin Reward</label>
+      <input type="number" id="c_coins" class="form-input" placeholder="100" min="0" value="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max Uses (blank = unlimited)</label>
+      <input type="number" id="c_maxuses" class="form-input" placeholder="Leave blank for unlimited" min="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Expires At (optional)</label>
+      <input type="datetime-local" id="c_expires" class="form-input">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="createCode()">Create Code</button>
+    <div class="result-msg" id="createResult"></div>
   </div>
 
-  <!-- Bulk Generate -->
   <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">Bulk Generate</h2>
+    <div class="card-header"><h2 class="card-title">Bulk Generate</h2></div>
+    <div class="form-group">
+      <label class="form-label">Quantity (max 1000)</label>
+      <input type="number" id="b_count" class="form-input" placeholder="10" min="1" max="1000">
     </div>
-    <form id="bulkCodeForm">
-      <div class="form-group">
-        <label class="form-label">Quantity (max 1000)</label>
-        <input type="number" name="count" class="form-input" placeholder="10" min="1" max="1000" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Coin Reward Each</label>
-        <input type="number" name="coin_reward" class="form-input" placeholder="50" min="0" value="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Max Uses Each (blank = unlimited)</label>
-        <input type="number" name="max_uses" class="form-input" placeholder="Leave blank for unlimited" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Expires At (optional)</label>
-        <input type="datetime-local" name="expires_at" class="form-input">
-      </div>
-      <button type="submit" class="btn btn-primary" style="width: 100%;">Generate Codes</button>
-      <div id="bulkResult" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
-    </form>
+    <div class="form-group">
+      <label class="form-label">Coin Reward Each</label>
+      <input type="number" id="b_coins" class="form-input" placeholder="50" min="0" value="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max Uses Each (blank = unlimited)</label>
+      <input type="number" id="b_maxuses" class="form-input" placeholder="Leave blank for unlimited" min="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Expires At (optional)</label>
+      <input type="datetime-local" id="b_expires" class="form-input">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="bulkGenerate()">Generate Codes</button>
+    <div class="result-msg" id="bulkResult"></div>
   </div>
 </div>
 
-<!-- Codes Table -->
 <div class="table-wrapper">
   <table class="table">
     <thead>
-      <tr>
-        <th>Code</th>
-        <th>Coins</th>
-        <th>Uses</th>
-        <th>Max Uses</th>
-        <th>Expires</th>
-        <th>Created</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
+      <tr><th>Code</th><th>Coins</th><th>Uses</th><th>Max Uses</th><th>Expires</th><th>Created</th><th>Status</th><th>Actions</th></tr>
     </thead>
     <tbody>
       <% if (typeof codes !== 'undefined' && codes && codes.length > 0) { %>
@@ -85,91 +68,84 @@
           var statusText = isMaxed ? 'Maxed' : (!isActive ? 'Expired' : 'Active');
         %>
         <tr>
-          <td style="font-family: monospace; font-size: 12px; font-weight: 600; color: var(--accent);"><%= code.code %></td>
-          <td style="color: var(--warning);"><%= code.coin_reward %></td>
+          <td style="font-family:monospace;font-size:12px;font-weight:600;color:var(--accent)"><%= code.code %></td>
+          <td style="color:var(--warning);font-weight:600"><%= code.coin_reward %></td>
           <td><%= code.use_count %></td>
           <td><%= code.max_uses !== null ? code.max_uses : '∞' %></td>
-          <td style="font-size: 12px; color: var(--text-muted);">
-            <%= code.expires_at ? new Date(code.expires_at).toLocaleDateString() : 'Never' %>
-          </td>
-          <td style="font-size: 12px; color: var(--text-muted);"><%= new Date(code.created_at).toLocaleDateString() %></td>
+          <td style="font-size:12px;color:var(--text-muted)"><%= code.expires_at ? new Date(code.expires_at).toLocaleDateString() : 'Never' %></td>
+          <td style="font-size:12px;color:var(--text-muted)"><%= new Date(code.created_at).toLocaleDateString() %></td>
           <td><span class="badge badge-<%= statusClass %>"><%= statusText %></span></td>
           <td>
             <% if (statusClass === 'active') { %>
             <button class="btn btn-danger btn-sm" onclick="deactivateCode(<%= code.id %>)">Deactivate</button>
             <% } else { %>
-            <span style="color: var(--text-muted); font-size: 12px;">—</span>
+            <span style="color:var(--text-muted);font-size:12px">—</span>
             <% } %>
           </td>
         </tr>
         <% }); %>
       <% } else { %>
-      <tr>
-        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">No codes yet.</td>
-      </tr>
+      <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px">No codes yet.</td></tr>
       <% } %>
     </tbody>
   </table>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+function showResult(id, ok, msg) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.color = ok ? 'var(--success)' : 'var(--danger)';
+  el.textContent = msg;
+}
 
-  function postForm(url, formEl, resultElId) {
-    var data = {};
-    new FormData(formEl).forEach(function(v, k) { if (v !== '') data[k] = v; });
-    var resultEl = document.getElementById(resultElId);
-    if (resultEl) { resultEl.textContent = 'Sending...'; resultEl.style.color = 'var(--text-muted)'; }
+function apiPost(url, data, cb) {
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(data)
+  })
+  .then(function(r) { return r.json(); })
+  .then(cb)
+  .catch(function(e) { cb({ error: e.message }); });
+}
 
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
-      body: JSON.stringify(data),
-      credentials: 'same-origin'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-      if (!resultEl) return;
-      if (res.success) {
-        resultEl.style.color = 'var(--success)';
-        resultEl.textContent = '✓ Done!';
-        setTimeout(function() { location.reload(); }, 1000);
-      } else {
-        resultEl.style.color = 'var(--danger)';
-        resultEl.textContent = res.error || 'Failed.';
-      }
-    })
-    .catch(function(err) {
-      if (resultEl) { resultEl.style.color = 'var(--danger)'; resultEl.textContent = 'Network error: ' + err.message; }
-    });
-  }
+function createCode() {
+  var code = document.getElementById('c_code').value.trim().toUpperCase();
+  if (!code) { showResult('createResult', false, 'Code is required.'); return; }
+  var data = { code: code, coin_reward: parseInt(document.getElementById('c_coins').value) || 0 };
+  var mu = document.getElementById('c_maxuses').value;
+  var ex = document.getElementById('c_expires').value;
+  if (mu) data.max_uses = parseInt(mu);
+  if (ex) data.expires_at = ex;
+  showResult('createResult', true, 'Creating...');
+  apiPost('/admin/codes', data, function(res) {
+    if (res.success) { showResult('createResult', true, '✓ Code created!'); setTimeout(function(){ location.reload(); }, 1000); }
+    else showResult('createResult', false, res.error || 'Failed.');
+  });
+}
 
-  var createForm = document.getElementById('createCodeForm');
-  if (createForm) {
-    createForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      postForm('/admin/codes', this, 'createResult');
-      return false;
-    });
-  }
+function bulkGenerate() {
+  var count = parseInt(document.getElementById('b_count').value);
+  if (!count || count < 1) { showResult('bulkResult', false, 'Enter a valid count.'); return; }
+  var data = { count: count, coin_reward: parseInt(document.getElementById('b_coins').value) || 0 };
+  var mu = document.getElementById('b_maxuses').value;
+  var ex = document.getElementById('b_expires').value;
+  if (mu) data.max_uses = parseInt(mu);
+  if (ex) data.expires_at = ex;
+  showResult('bulkResult', true, 'Generating...');
+  apiPost('/admin/codes/bulk', data, function(res) {
+    if (res.success) { showResult('bulkResult', true, '✓ Generated ' + res.codes.length + ' codes!'); setTimeout(function(){ location.reload(); }, 1200); }
+    else showResult('bulkResult', false, res.error || 'Failed.');
+  });
+}
 
-  var bulkForm = document.getElementById('bulkCodeForm');
-  if (bulkForm) {
-    bulkForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      postForm('/admin/codes/bulk', this, 'bulkResult');
-      return false;
-    });
-  }
-
-  window.deactivateCode = function(id) {
-    if (!confirm('Deactivate this code?')) return;
-    fetch('/admin/codes/' + id + '/deactivate', {
-      method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
-    }).then(function() { location.reload(); });
-  };
-});
+function deactivateCode(id) {
+  if (!confirm('Deactivate this code?')) return;
+  apiPost('/admin/codes/' + id + '/deactivate', {}, function(res) {
+    if (res.success) location.reload();
+    else alert(res.error || 'Failed.');
+  });
+}
 </script>

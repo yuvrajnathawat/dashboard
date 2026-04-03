@@ -1,60 +1,79 @@
+<style>
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.admin-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; position: relative; overflow: hidden; }
+.admin-stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.admin-stat.blue::before { background: var(--accent); }
+.admin-stat.green::before { background: var(--success); }
+.admin-stat.yellow::before { background: var(--warning); }
+.admin-stat.red::before { background: var(--danger); }
+.admin-stat-icon { font-size: 28px; margin-bottom: 12px; }
+.admin-stat-num { font-size: 32px; font-weight: 700; font-family: var(--font-primary); line-height: 1; margin-bottom: 4px; }
+.admin-stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.qa-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); text-decoration: none; transition: all 0.2s ease; font-size: 13px; font-weight: 500; text-align: center; }
+.qa-btn:hover { background: rgba(88,101,242,0.1); border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+.qa-btn-icon { font-size: 24px; }
+</style>
 
 <div class="page-header">
   <h1>Admin Dashboard</h1>
-  <p>Overview of the FreeNode Dashboard system.</p>
+  <p>System overview and quick actions.</p>
 </div>
 
 <% var s = typeof stats !== 'undefined' ? stats : {}; %>
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-label">Total Users</div>
-    <div class="stat-value accent"><%= s.totalUsers !== undefined ? Number(s.totalUsers).toLocaleString() : '—' %></div>
+<div class="admin-stats">
+  <div class="admin-stat blue">
+    <div class="admin-stat-icon">👥</div>
+    <div class="admin-stat-num" style="color:var(--accent)"><%= s.totalUsers !== undefined ? Number(s.totalUsers).toLocaleString() : '—' %></div>
+    <div class="admin-stat-label">Total Users</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Active Servers</div>
-    <div class="stat-value success"><%= s.totalActiveServers !== undefined ? Number(s.totalActiveServers).toLocaleString() : '—' %></div>
+  <div class="admin-stat green">
+    <div class="admin-stat-icon">🖥️</div>
+    <div class="admin-stat-num" style="color:var(--success)"><%= s.totalActiveServers !== undefined ? Number(s.totalActiveServers).toLocaleString() : '—' %></div>
+    <div class="admin-stat-label">Active Servers</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Suspended Servers</div>
-    <div class="stat-value warning"><%= s.totalSuspendedServers !== undefined ? Number(s.totalSuspendedServers).toLocaleString() : '—' %></div>
+  <div class="admin-stat yellow">
+    <div class="admin-stat-icon">⏸️</div>
+    <div class="admin-stat-num" style="color:var(--warning)"><%= s.totalSuspendedServers !== undefined ? Number(s.totalSuspendedServers).toLocaleString() : '—' %></div>
+    <div class="admin-stat-label">Suspended Servers</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Expiring in 24h</div>
-    <div class="stat-value danger"><%= s.expiringIn24h !== undefined ? Number(s.expiringIn24h).toLocaleString() : '—' %></div>
+  <div class="admin-stat red">
+    <div class="admin-stat-icon">⚠️</div>
+    <div class="admin-stat-num" style="color:var(--danger)"><%= s.expiringIn24h !== undefined ? Number(s.expiringIn24h).toLocaleString() : '—' %></div>
+    <div class="admin-stat-label">Expiring in 24h</div>
   </div>
 </div>
 
-<div class="grid-2" style="margin-top: 24px;">
+<div class="grid-2" style="gap:20px">
   <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">Quick Actions</h2>
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-      <a href="/admin/users" class="btn btn-ghost" style="justify-content: flex-start;">👥 Manage Users</a>
-      <a href="/admin/servers" class="btn btn-ghost" style="justify-content: flex-start;">🖥️ Manage Servers</a>
-      <a href="/admin/coins" class="btn btn-ghost" style="justify-content: flex-start;">💰 Manage Coins</a>
-      <a href="/admin/codes" class="btn btn-ghost" style="justify-content: flex-start;">🎁 Manage Codes</a>
-      <a href="/admin/eggs" class="btn btn-ghost" style="justify-content: flex-start;">🥚 Configure Eggs</a>
-      <a href="/admin/settings" class="btn btn-ghost" style="justify-content: flex-start;">⚙️ Settings</a>
+    <div class="card-header"><h2 class="card-title">Quick Actions</h2></div>
+    <div class="quick-actions">
+      <a href="/admin/users" class="qa-btn"><span class="qa-btn-icon">👥</span>Users</a>
+      <a href="/admin/servers" class="qa-btn"><span class="qa-btn-icon">🖥️</span>Servers</a>
+      <a href="/admin/coins" class="qa-btn"><span class="qa-btn-icon">💰</span>Coins</a>
+      <a href="/admin/codes" class="qa-btn"><span class="qa-btn-icon">🎁</span>Codes</a>
+      <a href="/admin/eggs" class="qa-btn"><span class="qa-btn-icon">🥚</span>Eggs</a>
+      <a href="/admin/settings" class="qa-btn"><span class="qa-btn-icon">⚙️</span>Settings</a>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">System Info</h2>
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-muted);">Node.js</span>
-        <span><%= typeof process !== 'undefined' ? process.version : 'N/A' %></span>
+    <div class="card-header"><h2 class="card-title">System Info</h2></div>
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--text-muted);">Node.js Version</span>
+        <span style="font-weight:600;color:var(--success)"><%= typeof process !== 'undefined' ? process.version : 'N/A' %></span>
       </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-muted);">Environment</span>
-        <span><%= typeof process !== 'undefined' ? (process.env.NODE_ENV || 'development') : 'N/A' %></span>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--text-muted);">Environment</span>
+        <span class="badge badge-active"><%= typeof process !== 'undefined' ? (process.env.NODE_ENV || 'development') : 'N/A' %></span>
       </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-muted);">Uptime</span>
-        <span id="uptime">—</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--text-muted);">Session Uptime</span>
+        <span style="font-weight:600;" id="uptime">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--text-muted);">Admin User</span>
+        <span style="font-weight:600;color:var(--accent)"><%= typeof user !== 'undefined' ? user.username : '—' %></span>
       </div>
     </div>
   </div>
@@ -62,16 +81,13 @@
 
 <script>
 (function() {
-  var startTime = Date.now();
-  function updateUptime() {
-    var elapsed = Math.floor((Date.now() - startTime) / 1000);
-    var h = Math.floor(elapsed / 3600);
-    var m = Math.floor((elapsed % 3600) / 60);
-    var s = elapsed % 60;
-    document.getElementById('uptime').textContent =
-      (h > 0 ? h + 'h ' : '') + (m > 0 ? m + 'm ' : '') + s + 's';
+  var start = Date.now();
+  function tick() {
+    var e = Math.floor((Date.now() - start) / 1000);
+    var h = Math.floor(e / 3600), m = Math.floor((e % 3600) / 60), s = e % 60;
+    var el = document.getElementById('uptime');
+    if (el) el.textContent = (h > 0 ? h + 'h ' : '') + (m > 0 ? m + 'm ' : '') + s + 's';
   }
-  setInterval(updateUptime, 1000);
-  updateUptime();
+  setInterval(tick, 1000); tick();
 })();
 </script>

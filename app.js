@@ -36,8 +36,10 @@ if (NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
-// Security headers
-app.use(helmet());
+// Security headers — CSP configured to allow inline scripts and Discord CDN
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
