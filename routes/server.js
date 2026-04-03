@@ -356,7 +356,7 @@ router.post(
       const newPassword = require('crypto').randomBytes(8).toString('hex');
 
       // Update on Pterodactyl
-      await pterodactylService.resetUserPassword(req.user.ptero_user_id, newPassword);
+      await pterodactylService.resetUserPassword(req.user.ptero_user_id, req.user.discord_id, newPassword);
 
       return res.json({ success: true, password: newPassword });
     } catch (err) {

@@ -211,12 +211,21 @@ async function getAvailableAllocations(nodeId) {
 
 /**
  * Reset a Pterodactyl user's password by their panel user ID.
+ * Pterodactyl PATCH requires email, username, first_name alongside password.
  * @param {number} pteroUserId
+ * @param {string} discordId  - used as username and to build email
  * @param {string} newPassword
  */
-async function resetUserPassword(pteroUserId, newPassword) {
+async function resetUserPassword(pteroUserId, discordId, newPassword) {
   return call(async () => {
+    // First fetch current user data so we don't lose any required fields
+    const userRes = await appApi.get(`/api/application/users/${pteroUserId}`);
+    const u = userRes.data.attributes;
     await appApi.patch(`/api/application/users/${pteroUserId}`, {
+      email: u.email,
+      username: u.username,
+      first_name: u.first_name,
+      last_name: u.last_name,
       password: newPassword,
     });
   }, 'resetUserPassword');
