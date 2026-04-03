@@ -1,6 +1,13 @@
 <div style="text-align: center; margin-bottom: 32px;">
-  <div style="width: 56px; height: 56px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-family: var(--font-primary); font-size: 24px; font-weight: 700; color: white;">F</div>
-  <h1 style="font-size: 24px; margin-bottom: 6px;">FreeNode Dashboard</h1>
+  <% if (typeof branding !== 'undefined' && branding.logo_url) { %>
+  <img src="<%= branding.logo_url %>" alt="logo"
+       style="width:56px;height:56px;border-radius:14px;object-fit:cover;margin:0 auto 16px;display:block;">
+  <% } else { %>
+  <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-family:var(--font-primary);font-size:24px;font-weight:700;color:white;">
+    <%= typeof branding !== 'undefined' && branding.site_name ? branding.site_name.charAt(0).toUpperCase() : 'F' %>
+  </div>
+  <% } %>
+  <h1 style="font-size: 24px; margin-bottom: 6px;"><%= typeof branding !== 'undefined' && branding.site_name ? branding.site_name : 'FreeNode' %> Dashboard</h1>
   <p style="font-size: 14px; color: var(--text-muted);">Free game &amp; bot server hosting</p>
 </div>
 

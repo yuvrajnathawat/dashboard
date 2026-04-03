@@ -71,12 +71,29 @@ router.get('/dashboard', isAuthenticated, async (req, res) => {
       nextExpiry = earliest;
     }
 
+    // Purchased resource totals from shop
+    const [purchaseRows] = await pool.execute(
+      `SELECT si.resource_type, COALESCE(SUM(si.resource_amount), 0) AS total
+       FROM shop_purchases sp
+       JOIN shop_items si ON sp.item_id = si.id
+       WHERE sp.user_id = ?
+       GROUP BY si.resource_type`,
+      [userId]
+    );
+    const purchased = { ram: 0, cpu: 0, disk: 0, servers: 0 };
+    for (const row of purchaseRows) {
+      if (purchased.hasOwnProperty(row.resource_type)) {
+        purchased[row.resource_type] = Number(row.total);
+      }
+    }
+
     return res.render('dashboard', {
       user: req.user,
       servers: serversWithUsage,
       totalServers,
       coinsEarnedToday,
       nextExpiry,
+      purchased,
     });
   } catch (err) {
     console.error('Dashboard error:', err);

@@ -53,6 +53,64 @@
   </div>
 </div>
 
+<!-- My Resources -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <h2 class="card-title">My Resources</h2>
+    <a href="/shop" class="btn btn-warning btn-sm">+ Upgrade</a>
+  </div>
+  <div class="grid-2" style="gap: 12px;">
+    <%
+      var ramPct   = user.max_ram_mb   > 0 ? Math.min(100, Math.round((purchased.ram   / user.max_ram_mb)   * 100)) : 0;
+      var cpuPct   = user.max_cpu_percent > 0 ? Math.min(100, Math.round((purchased.cpu   / user.max_cpu_percent) * 100)) : 0;
+      var diskPct  = user.max_disk_mb  > 0 ? Math.min(100, Math.round((purchased.disk  / user.max_disk_mb)  * 100)) : 0;
+    %>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">💾 RAM</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);"><%= user.max_ram_mb %>MB total</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;width:<%= ramPct %>%;background:var(--accent);border-radius:3px;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">+<%= purchased.ram %>MB purchased via shop</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">⚡ CPU</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);"><%= user.max_cpu_percent %>% total</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;width:<%= cpuPct %>%;background:var(--success);border-radius:3px;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">+<%= purchased.cpu %>% purchased via shop</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">💿 Disk</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);"><%= Math.round(user.max_disk_mb / 1024) %>GB total</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;width:<%= diskPct %>%;background:var(--warning);border-radius:3px;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">+<%= Math.round(purchased.disk / 1024) %>GB purchased via shop</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">🖥️ Server Slots</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);"><%= user.max_servers %> total</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;width:<%= user.max_servers > 0 ? Math.min(100, Math.round((totalServers / user.max_servers) * 100)) : 0 %>%;background:var(--danger);border-radius:3px;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);"><%= totalServers %> / <%= user.max_servers %> slots used · +<%= purchased.servers %> purchased</div>
+    </div>
+  </div>
+</div>
+
 <!-- Earn Shortcuts -->
 <div class="card" style="margin-bottom: 24px;">
   <div class="card-header">
