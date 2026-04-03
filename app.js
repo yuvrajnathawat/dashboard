@@ -135,12 +135,11 @@ app.use((req, res, next) => {
         .replace(/>\s+</g, '><')
         .trim();
 
-      // Base64 encode the entire page
-      const encoded = Buffer.from(minified).toString('base64');
+      // Base64 encode with proper UTF-8 handling
+      const encoded = Buffer.from(minified, 'utf8').toString('base64');
 
-      // Wrap in a shell that decodes and writes at runtime
-      // view-source shows only this meaningless shell
-      const shell = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Loading...</title></head><body><script>(function(){var _0x=['${encoded}'];var d=atob(_0x[0]);document.open();document.write(d);document.close();})();<\/script></body></html>`;
+      // Shell uses TextDecoder to properly handle UTF-8 (fixes emoji/special chars)
+      const shell = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Loading...</title></head><body><script>(function(){try{var b='${encoded}';var bytes=Uint8Array.from(atob(b),function(c){return c.charCodeAt(0);});var d=new TextDecoder('utf-8').decode(bytes);document.open();document.write(d);document.close();}catch(e){document.open();document.write(atob('${encoded}'));document.close();}})();<\/script></body></html>`;
 
       if (callback) return callback(null, shell);
       res.send(shell);
