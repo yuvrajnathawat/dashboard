@@ -11,7 +11,7 @@ const discordService = require('./discordService');
  * @returns {Promise<string|null>}
  */
 async function getSetting(key) {
-  const [rows] = await pool.query('SELECT value FROM settings WHERE key = ?', [key]);
+  const [rows] = await pool.query('SELECT value FROM settings WHERE `key` = ?', [key]);
   return rows.length ? rows[0].value : null;
 }
 

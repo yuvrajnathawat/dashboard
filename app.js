@@ -28,6 +28,9 @@ const expiryService = require('./services/expiryService');
 const app = express();
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy — required when behind Nginx
+app.set('trust proxy', 1);
+
 // Logging
 if (NODE_ENV !== 'test') {
   app.use(morgan('combined'));
