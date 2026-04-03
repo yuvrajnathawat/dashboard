@@ -10,9 +10,16 @@ const csrfProtection = csurf({ cookie: false, value: (req) => {
 } });
 
 function csrfMiddleware(req, res, next) {
+  // Skip CSRF for admin API JSON requests — protected by isAdmin middleware
+  if (req.path.startsWith('/admin') && req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+    try {
+      res.locals.csrfToken = '';
+    } catch (e) {}
+    return next();
+  }
+
   csrfProtection(req, res, (err) => {
     if (err) return next(err);
-    // Always set csrfToken so it's available in all views including after POST redirects
     try {
       res.locals.csrfToken = req.csrfToken();
     } catch (e) {
