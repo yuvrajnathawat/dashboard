@@ -115,20 +115,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Minify HTML response to make source less readable
+// Obfuscate HTML — encode body content so view-source shows nothing useful
 app.use((req, res, next) => {
   const originalRender = res.render.bind(res);
   res.render = function(view, options, callback) {
     originalRender(view, options, function(err, html) {
       if (err) return callback ? callback(err) : next(err);
-      // Strip HTML comments and collapse whitespace
+
+      // Only obfuscate full HTML pages (not JSON/API responses)
+      if (!html || !html.trim().startsWith('<!DOCTYPE')) {
+        if (callback) return callback(null, html);
+        return res.send(html);
+      }
+
+      // Minify first
       const minified = html
         .replace(/<!--[\s\S]*?-->/g, '')
         .replace(/\s{2,}/g, ' ')
         .replace(/>\s+</g, '><')
         .trim();
-      if (callback) return callback(null, minified);
-      res.send(minified);
+
+      // Base64 encode the entire page
+      const encoded = Buffer.from(minified).toString('base64');
+
+      // Wrap in a shell that decodes and writes at runtime
+      // view-source shows only this meaningless shell
+      const shell = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Loading...</title></head><body><script>(function(){var _0x=['${encoded}'];var d=atob(_0x[0]);document.open();document.write(d);document.close();})();<\/script></body></html>`;
+
+      if (callback) return callback(null, shell);
+      res.send(shell);
     });
   };
   next();
