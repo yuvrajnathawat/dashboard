@@ -74,8 +74,8 @@ if [ "$ID" != "ubuntu" ]; then
   exit 1
 fi
 
-if [ "$VERSION_ID" != "20.04" ] && [ "$VERSION_ID" != "22.04" ]; then
-  err "Unsupported Ubuntu version: $VERSION_ID. Requires 20.04 or 22.04."
+if [ "$VERSION_ID" != "20.04" ] && [ "$VERSION_ID" != "22.04" ] && [ "$VERSION_ID" != "24.04" ]; then
+  err "Unsupported Ubuntu version: $VERSION_ID. Requires 20.04, 22.04, or 24.04."
   exit 1
 fi
 
