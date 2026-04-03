@@ -4,6 +4,14 @@
 #  FreeNode Dashboard — Interactive Menu
 # ─────────────────────────────────────────────
 
+# If being piped (not interactive), save to file and re-run
+if [ ! -t 0 ]; then
+  SCRIPT_PATH="/opt/freenode.sh"
+  curl -sSL https://raw.githubusercontent.com/yuvrajnathawat/dashboard/main/freenode.sh -o "$SCRIPT_PATH"
+  chmod +x "$SCRIPT_PATH"
+  exec bash "$SCRIPT_PATH" < /dev/tty
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -109,7 +117,9 @@ do_status() {
 }
 
 do_logs() {
-  pm2 logs "$PM2_NAME"
+  echo -e "${CYAN}  Showing last 50 log lines (press Ctrl+C to exit):${RESET}"
+  echo -e ""
+  pm2 logs "$PM2_NAME" --lines 50 --nostream
 }
 
 do_fix() {
