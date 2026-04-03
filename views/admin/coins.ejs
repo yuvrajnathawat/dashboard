@@ -110,7 +110,7 @@ var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.que
 function postJSON(url, data, resultId) {
   fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
     body: JSON.stringify(data),
     credentials: 'same-origin'
   })

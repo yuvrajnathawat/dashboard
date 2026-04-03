@@ -82,16 +82,20 @@ module.exports = function (passport) {
           // Generate random password for Pterodactyl account
           const password = crypto.randomBytes(16).toString('hex');
 
-          // Create Pterodactyl account
-          const pteroData = await pterodactylService.createUser(
-            `${profile.id}@freenode.local`,
-            profile.id,
-            profile.username,
-            'User',
-            password
-          );
-
-          const pteroUserId = pteroData.attributes ? pteroData.attributes.id : pteroData.id;
+          // Try to create Pterodactyl account — non-fatal if it fails
+          let pteroUserId = null;
+          try {
+            const pteroData = await pterodactylService.createUser(
+              `${profile.id}@freenode.local`,
+              profile.id,
+              profile.username,
+              'User',
+              password
+            );
+            pteroUserId = pteroData.attributes ? pteroData.attributes.id : pteroData.id;
+          } catch (pteroErr) {
+            console.warn('[passport] Pterodactyl createUser failed (non-fatal):', pteroErr.message);
+          }
 
           // Insert new user into DB
           const [result] = await pool.query(

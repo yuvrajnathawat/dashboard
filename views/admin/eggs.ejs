@@ -86,7 +86,7 @@ var currentEggId = null;
 function toggleEgg(eggId, action) {
   fetch('/admin/eggs/' + eggId + '/' + action, {
     method: 'POST',
-    headers: { 'CSRF-Token': csrfToken },
+    headers: { 'x-csrf-token': csrfToken },
     credentials: 'same-origin'
   })
   .then(function(r) { return r.json(); })
@@ -112,7 +112,7 @@ function submitDefaults() {
 
   fetch('/admin/eggs/' + currentEggId + '/defaults', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
     body: JSON.stringify({ ram_mb: ram, cpu_percent: cpu, disk_mb: disk }),
     credentials: 'same-origin'
   })

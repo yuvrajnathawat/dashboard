@@ -126,7 +126,7 @@
 
       fetch('/earn/' + linkId + '/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
         credentials: 'same-origin'
       })
       .then(function(r) { return r.json(); })
@@ -151,7 +151,7 @@
 
     fetch('/earn/' + currentLinkId + '/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
       credentials: 'same-origin'
     })
     .then(function(r) { return r.json(); })

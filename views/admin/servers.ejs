@@ -106,7 +106,7 @@ function serverAction(id, action) {
   var method = action === 'delete' ? 'DELETE' : 'POST';
   fetch('/admin/servers/' + id + '/' + action, {
     method: method,
-    headers: { 'CSRF-Token': csrfToken },
+    headers: { 'x-csrf-token': csrfToken },
     credentials: 'same-origin'
   })
   .then(function(r) { return r.json(); })
@@ -120,7 +120,7 @@ function deleteServer(id, name) {
   if (!confirm('Delete server "' + name + '"? This cannot be undone.')) return;
   fetch('/admin/servers/' + id, {
     method: 'DELETE',
-    headers: { 'CSRF-Token': csrfToken },
+    headers: { 'x-csrf-token': csrfToken },
     credentials: 'same-origin'
   })
   .then(function(r) { return r.json(); })
@@ -141,7 +141,7 @@ function submitExtend() {
   if (!days || days < 1) { alert('Enter valid days.'); return; }
   fetch('/admin/servers/' + extendServerId + '/extend', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
     body: JSON.stringify({ days: days }),
     credentials: 'same-origin'
   })

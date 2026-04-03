@@ -167,7 +167,7 @@ function renewServer(serverId) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'CSRF-Token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+      'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
     },
     credentials: 'same-origin'
   })

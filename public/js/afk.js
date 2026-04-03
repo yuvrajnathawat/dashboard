@@ -32,7 +32,7 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'CSRF-Token': getCsrfToken(),
+        'x-csrf-token': getCsrfToken(),
       },
       body: JSON.stringify(body || {}),
       credentials: 'same-origin',

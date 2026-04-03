@@ -141,7 +141,7 @@ function submitCoinAdjust() {
 
   fetch('/admin/users/' + currentUserId + '/coins', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
     body: JSON.stringify({ amount: amount, reason: reason }),
     credentials: 'same-origin'
   })
@@ -162,20 +162,20 @@ function submitCoinAdjust() {
 function suspendUser(id) {
   if (!confirm('Suspend this user?')) return;
   fetch('/admin/users/' + id + '/suspend', {
-    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+    method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
   }).then(function() { location.reload(); });
 }
 
 function unsuspendUser(id) {
   fetch('/admin/users/' + id + '/unsuspend', {
-    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+    method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
   }).then(function() { location.reload(); });
 }
 
 function deleteUser(id, username) {
   if (!confirm('Delete user "' + username + '"? This will delete all their servers too. This cannot be undone.')) return;
   fetch('/admin/users/' + id, {
-    method: 'DELETE', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+    method: 'DELETE', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
   }).then(function() { location.reload(); });
 }
 

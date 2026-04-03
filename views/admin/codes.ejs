@@ -120,7 +120,7 @@ function postForm(url, formEl, resultEl) {
   new FormData(formEl).forEach(function(v, k) { if (v) data[k] = v; });
   fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+    headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
     body: JSON.stringify(data),
     credentials: 'same-origin'
   })
@@ -151,7 +151,7 @@ document.getElementById('bulkCodeForm').addEventListener('submit', function(e) {
 function deactivateCode(id) {
   if (!confirm('Deactivate this code?')) return;
   fetch('/admin/codes/' + id + '/deactivate', {
-    method: 'POST', headers: { 'CSRF-Token': csrfToken }, credentials: 'same-origin'
+    method: 'POST', headers: { 'x-csrf-token': csrfToken }, credentials: 'same-origin'
   }).then(function() { location.reload(); });
 }
 </script>

@@ -3,7 +3,10 @@
 const csurf = require('csurf');
 
 const csrfProtection = csurf({ cookie: false, value: (req) => {
-  return req.body._csrf || req.headers['csrf-token'] || req.headers['x-csrf-token'] || req.headers['xsrf-token'];
+  return req.body._csrf ||
+    req.headers['x-csrf-token'] ||
+    req.headers['x-xsrf-token'] ||
+    req.headers['csrf-token'];
 } });
 
 function csrfMiddleware(req, res, next) {
