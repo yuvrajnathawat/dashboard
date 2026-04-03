@@ -38,5 +38,24 @@
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <script src="/js/ui.js"></script>
   <script src="/js/sidebar.js"></script>
+  <script>
+    // Disable common inspect shortcuts for casual users
+    document.addEventListener('keydown', function(e) {
+      // Ctrl+U (view source), Ctrl+Shift+I/J/C (devtools), F12
+      if (
+        (e.ctrlKey && e.key === 'u') ||
+        (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) ||
+        e.key === 'F12'
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
+  </script>
 </body>
 </html>

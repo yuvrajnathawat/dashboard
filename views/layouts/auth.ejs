@@ -25,5 +25,15 @@
       <%- body %>
     </div>
   </div>
+  <script>
+    document.addEventListener('keydown', function(e) {
+      if (
+        (e.ctrlKey && e.key === 'u') ||
+        (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) ||
+        e.key === 'F12'
+      ) { e.preventDefault(); return false; }
+    });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+  </script>
 </body>
 </html>
