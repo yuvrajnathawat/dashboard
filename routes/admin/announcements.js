@@ -32,20 +32,13 @@ router.post(
       req.flash('error', errors.array().map(e => e.msg).join(', '));
       return res.redirect('/admin/announcements');
     }
-    const { title, type, content, embed_url, thumbnail_url, link_url, link_text, position, sort_order } = req.body;
-
-    // Auto-add thumbnail_url column if missing (safe migration)
-    try {
-      await pool.execute('ALTER TABLE announcements ADD COLUMN thumbnail_url VARCHAR(500) DEFAULT NULL');
-    } catch (_) { /* column already exists */ }
-    try {
-      await pool.execute('ALTER TABLE announcements ADD COLUMN video_height INT DEFAULT 360');
-    } catch (_) {}
-    try {
-      await pool.execute('ALTER TABLE announcements ADD COLUMN video_max_width INT DEFAULT 0');
-    } catch (_) {}
-
     const { title, type, content, embed_url, thumbnail_url, link_url, link_text, position, sort_order, video_height, video_max_width } = req.body;
+
+    // Auto-add new columns if missing (safe migration)
+    try { await pool.execute('ALTER TABLE announcements ADD COLUMN thumbnail_url VARCHAR(500) DEFAULT NULL'); } catch (_) {}
+    try { await pool.execute('ALTER TABLE announcements ADD COLUMN video_height INT DEFAULT 360'); } catch (_) {}
+    try { await pool.execute('ALTER TABLE announcements ADD COLUMN video_max_width INT DEFAULT 0'); } catch (_) {}
+
     await pool.execute(
       'INSERT INTO announcements (title, type, content, embed_url, thumbnail_url, link_url, link_text, position, sort_order, video_height, video_max_width) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [title, type, content || '', embed_url || '', thumbnail_url || '', link_url || '', link_text || '', position, sort_order || 0, Number(video_height) || 360, Number(video_max_width) || 0]
