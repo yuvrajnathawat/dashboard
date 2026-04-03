@@ -366,6 +366,56 @@ router.post(
   }
 );
 
+// ─── POST /servers/:id/delete ────────────────────────────────────────────────
+
+router.post(
+  '/:id/delete',
+  isAuthenticated,
+  [param('id').toInt().isInt({ min: 1 })],
+  async (req, res) => {
+    const paramErrors = validationResult(req);
+    if (!paramErrors.isEmpty()) return res.status(400).json({ error: 'Invalid server ID.' });
+
+    const serverId = Number(req.params.id);
+    const userId = req.user.id;
+
+    try {
+      // 1. Ownership check
+      const [rows] = await pool.execute(
+        "SELECT * FROM servers WHERE id = ? AND user_id = ? AND status != 'deleted'",
+        [serverId, userId]
+      );
+      if (!rows.length) return res.status(404).json({ error: 'Server not found.' });
+      const server = rows[0];
+
+      // 2. Delete from Pterodactyl (non-fatal if already gone)
+      try {
+        await pterodactylService.deleteServer(server.ptero_server_id);
+      } catch (pteroErr) {
+        console.warn('Pterodactyl deleteServer error (non-fatal):', pteroErr.message);
+      }
+
+      // 3. Mark as deleted in DB
+      await pool.execute(
+        "UPDATE servers SET status = 'deleted' WHERE id = ?",
+        [serverId]
+      );
+
+      return res.json({
+        success: true,
+        freed: {
+          ram_mb: server.ram_mb,
+          cpu_percent: server.cpu_percent,
+          disk_mb: server.disk_mb,
+        },
+      });
+    } catch (err) {
+      console.error('Server delete error:', err);
+      return res.status(500).json({ error: 'Failed to delete server.' });
+    }
+  }
+);
+
 // ─── POST /servers/:id/renew ──────────────────────────────────────────────────
 
 router.post(

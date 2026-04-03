@@ -232,6 +232,18 @@
         </svg>
         Reset Password
       </button>
+      <button
+        class="btn btn-sm"
+        style="background:rgba(237,66,69,0.15);color:var(--danger);border:1px solid rgba(237,66,69,0.3);"
+        onclick="deleteServer(<%= server.id %>, '<%= server.name %>', <%= server.ram_mb %>, <%= server.cpu_percent %>, <%= server.disk_mb %>)"
+        title="Delete this server"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+        Delete
+      </button>
       <% } %>
     </div>
   </div>
@@ -249,6 +261,34 @@
 <% } %>
 
 <script>
+function deleteServer(serverId, serverName, ramMb, cpuPct, diskMb) {
+  UI.confirm(
+    'Delete "' + serverName + '"? This is permanent and cannot be undone.\n\nResources freed: ' + ramMb + 'MB RAM · ' + cpuPct + '% CPU · ' + Math.round(diskMb/1024) + 'GB Disk',
+    function() {
+      fetch('/servers/' + serverId + '/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
+        },
+        credentials: 'same-origin'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          var f = data.freed;
+          UI.toast('Server deleted. Freed: ' + f.ram_mb + 'MB RAM · ' + f.cpu_percent + '% CPU · ' + Math.round(f.disk_mb/1024) + 'GB Disk', 'success', 6000);
+          setTimeout(function() { location.reload(); }, 1500);
+        } else {
+          UI.toast(data.error || 'Failed to delete server.', 'error');
+        }
+      })
+      .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
+    },
+    { title: 'Delete Server', confirmText: 'Delete Forever', danger: true }
+  );
+}
+
 function renewServer(serverId) {
   UI.confirm('Renew this server? Coins will be deducted.', function() {
     fetch('/servers/' + serverId + '/renew', {
