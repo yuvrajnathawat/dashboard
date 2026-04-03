@@ -240,6 +240,13 @@ router.post(
         ]);
       }
 
+      // 9b. Check ptero_user_id exists
+      if (!req.user.ptero_user_id) {
+        return reRenderWithErrors([
+          'Your Pterodactyl account is not linked yet. Please logout and login again to fix this automatically.',
+        ]);
+      }
+
       // 10. Build Pterodactyl server creation payload
       const serverPayload = {
         name,

@@ -40,16 +40,37 @@ module.exports = function (passport) {
               return done(null, false, { message: 'Your account has been suspended.' });
             }
 
-            // Update only username and avatar — DO NOT touch is_admin (managed via DB/script)
+            // Update username and avatar
             await pool.query(
               'UPDATE users SET username = ?, avatar = ? WHERE id = ?',
               [profile.username, profile.avatar || null, user.id]
             );
 
+            // If ptero_user_id is missing, try to create it now
+            let pteroUserId = user.ptero_user_id;
+            if (!pteroUserId) {
+              try {
+                const password = crypto.randomBytes(16).toString('hex');
+                const pteroData = await pterodactylService.createUser(
+                  `${profile.id}@freenode.local`,
+                  profile.id,
+                  profile.username,
+                  'User',
+                  password
+                );
+                pteroUserId = pteroData.attributes ? pteroData.attributes.id : pteroData.id;
+                await pool.query('UPDATE users SET ptero_user_id = ? WHERE id = ?', [pteroUserId, user.id]);
+                console.log(`[passport] Created missing Pterodactyl user for ${profile.username}: ${pteroUserId}`);
+              } catch (pteroErr) {
+                console.warn('[passport] Pterodactyl createUser retry failed:', pteroErr.message);
+              }
+            }
+
             return done(null, {
               ...user,
               username: profile.username,
               avatar: profile.avatar || null,
+              ptero_user_id: pteroUserId,
             });
           }
 
