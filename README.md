@@ -1,6 +1,8 @@
-# SoloCloud Dashboard
+# Razer Dashboard
 
 A free game & bot server hosting dashboard built on top of Pterodactyl Panel. Users login with Discord, earn coins via AFK farming and tasks, and use them to create and manage servers.
+
+> **Branding is fully customizable** — site name, logo, favicon, and background image can all be changed from the admin panel (`/admin/settings`). The default name is "Razer Dashboard" but you can set it to anything.
 
 ## Features
 
