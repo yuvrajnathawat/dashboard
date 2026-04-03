@@ -115,40 +115,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// Obfuscate HTML — encode body content so view-source shows nothing useful
+// Obfuscate HTML — minify + strip comments so view-source is less readable
 app.use((req, res, next) => {
   const originalRender = res.render.bind(res);
   res.render = function(view, options, callback) {
     originalRender(view, options, function(err, html) {
       if (err) return callback ? callback(err) : next(err);
 
-      // Only obfuscate full HTML pages (not JSON/API responses)
+      // Only process full HTML pages
       if (!html || !html.trim().startsWith('<!DOCTYPE')) {
         if (callback) return callback(null, html);
         return res.send(html);
       }
 
-      // Minify first
+      // Strip comments and collapse whitespace — keeps functionality intact
       const minified = html
         .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/>\s+</g, '><')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*/g, '')
         .trim();
 
-      // Base64 encode with proper UTF-8 handling
-      const encoded = Buffer.from(minified, 'utf8').toString('base64');
-
-      // Extract title and favicon from actual HTML to show in shell immediately
-      const titleMatch = minified.match(/<title[^>]*>([^<]*)<\/title>/i);
-      const shellTitle = titleMatch ? titleMatch[1] : 'Dashboard';
-      const faviconMatch = minified.match(/<link[^>]*rel=["']icon["'][^>]*href=["']([^"']+)["']/i);
-      const shellFavicon = faviconMatch ? `<link rel="icon" href="${faviconMatch[1]}">` : '';
-
-      // Shell uses TextDecoder to properly handle UTF-8 (fixes emoji/special chars)
-      const shell = `<!DOCTYPE html><html><head><meta charset="UTF-8">${shellFavicon}<title>${shellTitle}</title><style>body{margin:0;background:#0b0d12;}</style></head><body><script>(function(){try{var b='${encoded}';var bytes=Uint8Array.from(atob(b),function(c){return c.charCodeAt(0);});var d=new TextDecoder('utf-8').decode(bytes);document.open();document.write(d);document.close();}catch(e){document.open();document.write(atob('${encoded}'));document.close();}})();<\/script></body></html>`;
-
-      if (callback) return callback(null, shell);
-      res.send(shell);
+      if (callback) return callback(null, minified);
+      res.send(minified);
     });
   };
   next();
