@@ -128,11 +128,9 @@ app.use((req, res, next) => {
         return res.send(html);
       }
 
-      // Strip comments and collapse whitespace — keeps functionality intact
+      // Strip HTML comments only — do NOT collapse whitespace inside scripts
       const minified = html
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/[ \t]+/g, ' ')
-        .replace(/\n\s*/g, '')
+        .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
         .trim();
 
       if (callback) return callback(null, minified);

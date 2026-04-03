@@ -215,15 +215,14 @@
         View Panel
       </a>
       <button
-        class="btn btn-primary btn-sm"
-        onclick="renewServer(<%= server.id %>)"
-        <% if (server.status === 'suspended') { %>title="Renew to unsuspend"<% } %>
-      >
-        Renew
-      </button>
+        class="btn btn-primary btn-sm server-renew-btn"
+        data-id="<%= server.id %>"
+        data-status="<%= server.status %>"
+        title="<%= server.status === 'suspended' ? 'Renew to unsuspend' : 'Renew server' %>"
+      >Renew</button>
       <button
-        class="btn btn-ghost btn-sm"
-        onclick="resetPassword(<%= server.id %>)"
+        class="btn btn-ghost btn-sm server-resetpw-btn"
+        data-id="<%= server.id %>"
         title="Reset your Pterodactyl panel password"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -233,9 +232,13 @@
         Reset Password
       </button>
       <button
-        class="btn btn-sm"
+        class="btn btn-sm server-delete-btn"
         style="background:rgba(237,66,69,0.15);color:var(--danger);border:1px solid rgba(237,66,69,0.3);"
-        onclick="deleteServer(<%= server.id %>, '<%= server.name %>', <%= server.ram_mb %>, <%= server.cpu_percent %>, <%= server.disk_mb %>)"
+        data-id="<%= server.id %>"
+        data-name="<%= encodeURIComponent(server.name) %>"
+        data-ram="<%= server.ram_mb %>"
+        data-cpu="<%= server.cpu_percent %>"
+        data-disk="<%= server.disk_mb %>"
         title="Delete this server"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -261,123 +264,89 @@
 <% } %>
 
 <script>
-function deleteServer(serverId, serverName, ramMb, cpuPct, diskMb) {
-  UI.confirm(
-    'Delete "' + serverName + '"? This is permanent and cannot be undone.\n\nResources freed: ' + ramMb + 'MB RAM · ' + cpuPct + '% CPU · ' + Math.round(diskMb/1024) + 'GB Disk',
-    function() {
-      fetch('/servers/' + serverId + '/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
-        },
-        credentials: 'same-origin'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          var f = data.freed;
-          UI.toast('Server deleted. Freed: ' + f.ram_mb + 'MB RAM · ' + f.cpu_percent + '% CPU · ' + Math.round(f.disk_mb/1024) + 'GB Disk', 'success', 6000);
-          setTimeout(function() { location.reload(); }, 1500);
-        } else {
-          UI.toast(data.error || 'Failed to delete server.', 'error');
-        }
-      })
-      .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
-    },
-    { title: 'Delete Server', confirmText: 'Delete Forever', danger: true }
-  );
-}
+(function() {
+  var csrf = function() {
+    var m = document.querySelector('meta[name="csrf-token"]');
+    return m ? m.content : '';
+  };
 
-function renewServer(serverId) {
-  UI.confirm('Renew this server? Coins will be deducted.', function() {
-    fetch('/servers/' + serverId + '/renew', {
+  function postJSON(url, cb) {
+    fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
-      },
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf() },
       credentials: 'same-origin'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        UI.toast('Server renewed successfully!', 'success');
-        setTimeout(function() { location.reload(); }, 1000);
-      } else {
-        UI.toast(data.error || 'Renewal failed', 'error');
-      }
-    })
-    .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
-  }, { title: 'Renew Server', confirmText: 'Renew', danger: false });
-}
+    }).then(function(r) { return r.json(); }).then(cb).catch(function() {
+      UI.toast('Network error. Please try again.', 'error');
+    });
+  }
 
-function resetPassword(serverId) {
-  UI.confirm('Reset your Pterodactyl panel password? A new password will be shown once.', function() {
-    fetch('/servers/' + serverId + '/reset-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-csrf-token': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : ''
-      },
-      credentials: 'same-origin'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        showCredentialsModal(data.email, data.password);
-      } else {
-        UI.toast(data.error || 'Failed to reset password.', 'error');
-      }
-    })
-    .catch(function() { UI.toast('Network error. Please try again.', 'error'); });
-  }, { title: 'Reset Panel Password', confirmText: 'Reset', danger: true });
-}
+  // Event delegation — handles all server card buttons safely
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button[data-id]');
+    if (!btn) return;
+    var id = btn.dataset.id;
 
-function showCredentialsModal(email, password) {
-  // Remove existing modal if any
-  var existing = document.getElementById('creds-modal');
-  if (existing) existing.remove();
+    if (btn.classList.contains('server-renew-btn')) {
+      UI.confirm('Renew this server? Coins will be deducted.', function() {
+        postJSON('/servers/' + id + '/renew', function(data) {
+          if (data.success) { UI.toast('Server renewed!', 'success'); setTimeout(function() { location.reload(); }, 1000); }
+          else UI.toast(data.error || 'Renewal failed', 'error');
+        });
+      }, { title: 'Renew Server', confirmText: 'Renew', danger: false });
+    }
 
-  var modal = document.createElement('div');
-  modal.id = 'creds-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
-  modal.innerHTML = `
-    <div style="background:var(--bg-secondary,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-      <h3 style="margin:0 0 6px;font-size:17px;color:var(--text-primary,#fff);">Password Reset</h3>
-      <p style="margin:0 0 20px;font-size:13px;color:var(--text-muted,#aaa);">Save these credentials — password won't be shown again.</p>
+    if (btn.classList.contains('server-resetpw-btn')) {
+      UI.confirm('Reset your Pterodactyl panel password? A new password will be shown once.', function() {
+        postJSON('/servers/' + id + '/reset-password', function(data) {
+          if (data.success) showCredentialsModal(data.email, data.password);
+          else UI.toast(data.error || 'Failed to reset password.', 'error');
+        });
+      }, { title: 'Reset Panel Password', confirmText: 'Reset', danger: true });
+    }
 
-      <div style="margin-bottom:14px;">
-        <label style="font-size:12px;color:var(--text-muted,#aaa);display:block;margin-bottom:6px;">Panel Email</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="creds-email" readonly value="${email}" style="flex:1;background:var(--bg-primary,#13131a);border:1px solid var(--border,#333);border-radius:6px;padding:8px 10px;color:var(--text-primary,#fff);font-size:13px;outline:none;">
-          <button onclick="copyField('creds-email', this)" style="background:var(--accent,#5865f2);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;">Copy</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style="font-size:12px;color:var(--text-muted,#aaa);display:block;margin-bottom:6px;">Password</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="creds-pass" readonly value="${password}" style="flex:1;background:var(--bg-primary,#13131a);border:1px solid var(--border,#333);border-radius:6px;padding:8px 10px;color:var(--text-primary,#fff);font-size:13px;outline:none;">
-          <button onclick="copyField('creds-pass', this)" style="background:var(--accent,#5865f2);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;">Copy</button>
-        </div>
-      </div>
-
-      <button onclick="document.getElementById('creds-modal').remove()" style="width:100%;background:var(--accent,#5865f2);border:none;border-radius:8px;padding:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:600;">Done</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  // Close on backdrop click
-  modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-}
-
-function copyField(inputId, btn) {
-  var input = document.getElementById(inputId);
-  navigator.clipboard.writeText(input.value).then(function() {
-    var orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    btn.style.background = '#3ba55d';
-    setTimeout(function() { btn.textContent = orig; btn.style.background = ''; }, 2000);
+    if (btn.classList.contains('server-delete-btn')) {
+      var name = decodeURIComponent(btn.dataset.name || 'this server');
+      var ram = btn.dataset.ram; var cpu = btn.dataset.cpu; var disk = btn.dataset.disk;
+      UI.confirm('Delete "' + name + '"? Permanent and cannot be undone.\n\nWill free: ' + ram + 'MB RAM · ' + cpu + '% CPU · ' + Math.round(disk/1024) + 'GB Disk', function() {
+        postJSON('/servers/' + id + '/delete', function(data) {
+          if (data.success) {
+            var f = data.freed;
+            UI.toast('Deleted. Freed: ' + f.ram_mb + 'MB RAM · ' + f.cpu_percent + '% CPU · ' + Math.round(f.disk_mb/1024) + 'GB Disk', 'success', 6000);
+            setTimeout(function() { location.reload(); }, 1500);
+          } else UI.toast(data.error || 'Failed to delete.', 'error');
+        });
+      }, { title: 'Delete Server', confirmText: 'Delete Forever', danger: true });
+    }
   });
-}
+
+  function showCredentialsModal(email, password) {
+    var existing = document.getElementById('creds-modal');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'creds-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px);';
+    modal.innerHTML = '<div style="background:var(--bg-card,#13161e);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.6);">'
+      + '<h3 style="margin:0 0 6px;font-size:17px;color:var(--text-primary);">Password Reset</h3>'
+      + '<p style="margin:0 0 20px;font-size:13px;color:var(--text-muted);">Save these — password won\'t be shown again.</p>'
+      + '<div style="margin-bottom:14px;"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Panel Email</label>'
+      + '<div style="display:flex;gap:8px;"><input id="creds-email" readonly value="' + email + '" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-primary);font-size:13px;outline:none;">'
+      + '<button onclick="copyField(\'creds-email\',this)" style="background:var(--accent);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;">Copy</button></div></div>'
+      + '<div style="margin-bottom:24px;"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Password</label>'
+      + '<div style="display:flex;gap:8px;"><input id="creds-pass" readonly value="' + password + '" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-primary);font-size:13px;outline:none;">'
+      + '<button onclick="copyField(\'creds-pass\',this)" style="background:var(--accent);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;">Copy</button></div></div>'
+      + '<button onclick="document.getElementById(\'creds-modal\').remove()" style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:600;">Done</button>'
+      + '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+  }
+
+  window.copyField = function(inputId, btn) {
+    var input = document.getElementById(inputId);
+    navigator.clipboard.writeText(input.value).then(function() {
+      var orig = btn.textContent;
+      btn.textContent = 'Copied!'; btn.style.background = '#3ba55d';
+      setTimeout(function() { btn.textContent = orig; btn.style.background = ''; }, 2000);
+    });
+  };
+})();
 </script>
