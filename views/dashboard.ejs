@@ -218,11 +218,58 @@ function resetPassword(serverId) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) {
-      alert('Password reset!\n\nPanel Email: ' + data.email + '\nNew Password: ' + data.password + '\n\nSave this — it will not be shown again.');
+      showCredentialsModal(data.email, data.password);
     } else {
       alert(data.error || 'Failed to reset password.');
     }
   })
   .catch(function() { alert('Network error. Please try again.'); });
+}
+
+function showCredentialsModal(email, password) {
+  // Remove existing modal if any
+  var existing = document.getElementById('creds-modal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'creds-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  modal.innerHTML = `
+    <div style="background:var(--bg-secondary,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <h3 style="margin:0 0 6px;font-size:17px;color:var(--text-primary,#fff);">Password Reset</h3>
+      <p style="margin:0 0 20px;font-size:13px;color:var(--text-muted,#aaa);">Save these credentials — password won't be shown again.</p>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;color:var(--text-muted,#aaa);display:block;margin-bottom:6px;">Panel Email</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="creds-email" readonly value="${email}" style="flex:1;background:var(--bg-primary,#13131a);border:1px solid var(--border,#333);border-radius:6px;padding:8px 10px;color:var(--text-primary,#fff);font-size:13px;outline:none;">
+          <button onclick="copyField('creds-email', this)" style="background:var(--accent,#5865f2);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;color:var(--text-muted,#aaa);display:block;margin-bottom:6px;">Password</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="creds-pass" readonly value="${password}" style="flex:1;background:var(--bg-primary,#13131a);border:1px solid var(--border,#333);border-radius:6px;padding:8px 10px;color:var(--text-primary,#fff);font-size:13px;outline:none;">
+          <button onclick="copyField('creds-pass', this)" style="background:var(--accent,#5865f2);border:none;border-radius:6px;padding:8px 12px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;">Copy</button>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('creds-modal').remove()" style="width:100%;background:var(--accent,#5865f2);border:none;border-radius:8px;padding:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:600;">Done</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  // Close on backdrop click
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+}
+
+function copyField(inputId, btn) {
+  var input = document.getElementById(inputId);
+  navigator.clipboard.writeText(input.value).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.background = '#3ba55d';
+    setTimeout(function() { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  });
 }
 </script>
