@@ -43,13 +43,38 @@
   var form = document.getElementById('redeemForm');
   var resultEl = document.getElementById('redeemResult');
   var btn = document.getElementById('redeemBtn');
+  var countdownTimer = null;
 
-  // Auto-uppercase input
   document.getElementById('code').addEventListener('input', function() {
     var pos = this.selectionStart;
     this.value = this.value.toUpperCase();
     this.setSelectionRange(pos, pos);
   });
+
+  function showResult(type, msg) {
+    resultEl.style.display = 'block';
+    resultEl.className = 'alert alert-' + type;
+    resultEl.textContent = msg;
+  }
+
+  function startCooldown(seconds) {
+    btn.disabled = true;
+    if (countdownTimer) clearInterval(countdownTimer);
+    var remaining = seconds;
+
+    function tick() {
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Try again in ' + remaining + 's';
+      remaining--;
+      if (remaining < 0) {
+        clearInterval(countdownTimer);
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg> Redeem';
+        resultEl.style.display = 'none';
+      }
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -62,40 +87,38 @@
 
     fetch('/redeem', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-csrf-token': csrfToken
-      },
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
       body: JSON.stringify({ code: code }),
       credentials: 'same-origin'
     })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      resultEl.style.display = 'block';
+    .then(function(r) {
+      return r.json().then(function(data) { return { status: r.status, data: data }; });
+    })
+    .then(function(res) {
+      var data = res.data;
+
+      if (res.status === 429 || data.error === 'rate_limited') {
+        var wait = data.retryAfter || 30;
+        showResult('warning', 'You are rate limited. Please wait ' + wait + ' seconds before trying again.');
+        startCooldown(wait);
+        return;
+      }
+
       if (data.success) {
-        resultEl.className = 'alert alert-success';
-        var msg = '✓ Code redeemed! You received ' + data.coins + ' coins.';
-        if (data.resources) {
-          msg += ' Resource bonuses applied.';
-        }
-        resultEl.textContent = msg;
+        showResult('success', '✓ Code redeemed! You received ' + data.coins + ' coins.' + (data.resources ? ' Resource bonuses applied.' : ''));
         document.getElementById('code').value = '';
-        // Update navbar balance if present
         var navBalance = document.querySelector('.navbar-coin-balance');
-        if (navBalance && data.newBalance !== undefined) {
-          navBalance.textContent = data.newBalance.toLocaleString();
-        }
+        if (navBalance && data.newBalance !== undefined) navBalance.textContent = data.newBalance.toLocaleString();
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg> Redeem';
       } else {
-        resultEl.className = 'alert alert-error';
-        resultEl.textContent = data.error || 'Failed to redeem code.';
+        showResult('error', data.error || 'Failed to redeem code.');
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg> Redeem';
       }
     })
     .catch(function() {
-      resultEl.style.display = 'block';
-      resultEl.className = 'alert alert-error';
-      resultEl.textContent = 'Network error. Please try again.';
-    })
-    .finally(function() {
+      showResult('error', 'Network error. Please check your connection and try again.');
       btn.disabled = false;
       btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg> Redeem';
     });

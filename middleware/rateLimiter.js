@@ -28,6 +28,13 @@ const redeemLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+    res.status(429).json({
+      error: 'rate_limited',
+      retryAfter: retryAfter,
+    });
+  },
 });
 
 module.exports = { authLimiter, afkLimiter, earnLimiter, redeemLimiter };
