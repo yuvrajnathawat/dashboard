@@ -1,0 +1,69 @@
+<div class="page-header">
+  <h1>Earn Links</h1>
+  <p>Manage links users can complete to earn coins.</p>
+</div>
+
+<%- include('../partials/flash') %>
+
+<!-- Add Link Form -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header"><h2 class="card-title">Add New Earn Link</h2></div>
+  <form method="POST" action="/admin/earn/add">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-input" placeholder="e.g. Watch Ad #1" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL</label>
+        <input type="url" name="url" class="form-input" placeholder="https://..." required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coin Reward</label>
+        <input type="number" name="coin_reward" class="form-input" min="1" value="10" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cooldown (seconds)</label>
+        <input type="number" name="cooldown_seconds" class="form-input" min="0" value="86400" required>
+        <div class="form-hint">86400 = 24 hours. 0 = no cooldown.</div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Link</button>
+  </form>
+</div>
+
+<!-- Links Table -->
+<div class="card">
+  <div class="card-header"><h2 class="card-title">All Earn Links (<%= links.length %>)</h2></div>
+  <% if (links.length === 0) { %>
+  <div class="empty-state"><div class="empty-state-icon">💰</div><p>No earn links yet.</p></div>
+  <% } else { %>
+  <div style="overflow-x:auto;">
+    <table class="table">
+      <thead><tr><th>Name</th><th>URL</th><th>Reward</th><th>Cooldown</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% links.forEach(function(link) { %>
+        <tr>
+          <td><%= link.name %></td>
+          <td style="font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= link.url %></td>
+          <td><%= link.coin_reward %> coins</td>
+          <td><%= link.cooldown_seconds >= 3600 ? Math.round(link.cooldown_seconds/3600) + 'h' : link.cooldown_seconds + 's' %></td>
+          <td><span class="badge badge-<%= link.is_active ? 'active' : 'suspended' %>"><%= link.is_active ? 'Active' : 'Inactive' %></span></td>
+          <td style="display:flex;gap:8px;">
+            <form method="POST" action="/admin/earn/<%= link.id %>/toggle">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <button class="btn btn-ghost btn-sm"><%= link.is_active ? 'Disable' : 'Enable' %></button>
+            </form>
+            <form method="POST" action="/admin/earn/<%= link.id %>/delete" onsubmit="return confirm('Delete this link?')">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;">Delete</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>

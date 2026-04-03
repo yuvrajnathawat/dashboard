@@ -62,6 +62,23 @@ app.use(flash());
 // CSRF protection
 app.use(csrfMiddleware);
 
+const pool = require('./config/database');
+
+// Branding middleware — loads site_name, favicon_url, logo_url, bg_image_url from DB
+app.use(async (req, res, next) => {
+  try {
+    const [rows] = await pool.execute(
+      "SELECT `key`, value FROM settings WHERE `key` IN ('site_name','favicon_url','logo_url','bg_image_url')"
+    );
+    const branding = { site_name: 'FreeNode', favicon_url: '', logo_url: '', bg_image_url: '' };
+    for (const row of rows) branding[row.key] = row.value || '';
+    res.locals.branding = branding;
+  } catch (_) {
+    res.locals.branding = { site_name: 'FreeNode', favicon_url: '', logo_url: '', bg_image_url: '' };
+  }
+  next();
+});
+
 // Template locals
 app.use((req, res, next) => {
   res.locals.user = req.user;

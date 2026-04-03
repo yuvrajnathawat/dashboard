@@ -6,10 +6,19 @@
   <% if (typeof csrfToken !== 'undefined') { %>
   <meta name="csrf-token" content="<%= csrfToken %>">
   <% } %>
-  <title>FreeNode Dashboard</title>
+  <title><%= typeof branding !== 'undefined' && branding.site_name ? branding.site_name : 'FreeNode' %> Dashboard</title>
+  <% if (typeof branding !== 'undefined' && branding.favicon_url) { %>
+  <link rel="icon" href="<%= branding.favicon_url %>">
+  <% } %>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
+  <% if (typeof branding !== 'undefined' && branding.bg_image_url) { %>
+  <style>
+    body { background-image: url('<%= branding.bg_image_url %>'); background-size: cover; background-attachment: fixed; background-position: center; }
+    .app-layout { background: transparent; }
+  </style>
+  <% } %>
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>">
   <div class="app-layout" id="appLayout">

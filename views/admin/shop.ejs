@@ -1,0 +1,79 @@
+<div class="page-header">
+  <h1>Shop Items</h1>
+  <p>Manage items users can buy with coins.</p>
+</div>
+
+<%- include('../partials/flash') %>
+
+<!-- Add Item Form -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header"><h2 class="card-title">Add New Item</h2></div>
+  <form method="POST" action="/admin/shop/add">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-input" placeholder="e.g. +512MB RAM" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" name="description" class="form-input" placeholder="Optional description">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coin Cost</label>
+        <input type="number" name="coin_cost" class="form-input" min="1" value="100" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resource Type</label>
+        <select name="resource_type" class="form-select" required>
+          <option value="ram">RAM (MB)</option>
+          <option value="cpu">CPU (%)</option>
+          <option value="disk">Disk (MB)</option>
+          <option value="servers">Server Slots</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resource Amount</label>
+        <input type="number" name="resource_amount" class="form-input" min="1" value="512" required>
+        <div class="form-hint">MB for RAM/Disk, % for CPU, count for Servers</div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Item</button>
+  </form>
+</div>
+
+<!-- Items Table -->
+<div class="card">
+  <div class="card-header"><h2 class="card-title">All Items (<%= items.length %>)</h2></div>
+  <% if (items.length === 0) { %>
+  <div class="empty-state"><div class="empty-state-icon">🛒</div><p>No shop items yet.</p></div>
+  <% } else { %>
+  <div style="overflow-x:auto;">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Description</th><th>Cost</th><th>Type</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% items.forEach(function(item) { %>
+        <tr>
+          <td><%= item.name %></td>
+          <td style="color:var(--text-muted);font-size:13px;"><%= item.description || '—' %></td>
+          <td><%= item.coin_cost %> coins</td>
+          <td><span class="badge badge-active"><%= item.resource_type %></span></td>
+          <td><%= item.resource_amount %></td>
+          <td><span class="badge badge-<%= item.is_active ? 'active' : 'suspended' %>"><%= item.is_active ? 'Active' : 'Inactive' %></span></td>
+          <td style="display:flex;gap:8px;">
+            <form method="POST" action="/admin/shop/<%= item.id %>/toggle">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <button class="btn btn-ghost btn-sm"><%= item.is_active ? 'Disable' : 'Enable' %></button>
+            </form>
+            <form method="POST" action="/admin/shop/<%= item.id %>/delete" onsubmit="return confirm('Delete this item?')">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;">Delete</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>

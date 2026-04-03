@@ -10,6 +10,8 @@ const eggsRouter = require('./eggs');
 const codesRouter = require('./codes');
 const coinsRouter = require('./coins');
 const settingsRouter = require('./settings');
+const shopRouter = require('./shop');
+const earnRouter = require('./earn');
 
 const router = express.Router();
 
@@ -23,6 +25,8 @@ router.use('/eggs', eggsRouter);
 router.use('/codes', codesRouter);
 router.use('/coins', coinsRouter);
 router.use('/settings', settingsRouter);
+router.use('/shop', shopRouter);
+router.use('/earn', earnRouter);
 
 // GET / — admin dashboard overview
 router.get('/', async (req, res) => {

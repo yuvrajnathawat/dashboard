@@ -24,6 +24,9 @@ const NUMERIC_KEYS = [
 // URL setting keys that must be valid URLs
 const URL_KEYS = ['pterodactyl_url'];
 
+// String setting keys (no special validation)
+const STRING_KEYS = ['site_name', 'favicon_url', 'logo_url', 'bg_image_url'];
+
 // GET / — render settings page
 router.get('/', async (req, res) => {
   try {
@@ -66,8 +69,8 @@ router.post(
       const updates = Object.entries(req.body);
       for (const [key, value] of updates) {
         await pool.execute(
-          'UPDATE settings SET value = ? WHERE `key` = ?',
-          [value, key]
+          'INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?',
+          [key, value, value]
         );
       }
 
