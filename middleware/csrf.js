@@ -2,13 +2,18 @@
 
 const csurf = require('csurf');
 
-const csrfProtection = csurf({ cookie: false });
+const csrfProtection = csurf({ cookie: false, value: (req) => {
+  return req.body._csrf || req.headers['csrf-token'] || req.headers['x-csrf-token'] || req.headers['xsrf-token'];
+} });
 
 function csrfMiddleware(req, res, next) {
   csrfProtection(req, res, (err) => {
     if (err) return next(err);
-    if (req.method === 'GET') {
+    // Always set csrfToken so it's available in all views including after POST redirects
+    try {
       res.locals.csrfToken = req.csrfToken();
+    } catch (e) {
+      res.locals.csrfToken = '';
     }
     return next();
   });
