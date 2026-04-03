@@ -174,6 +174,31 @@ router.post(
       const allocation = allocations[0];
       const allocationId = allocation.attributes.id;
 
+      // 6b. Fetch egg details to get docker_image and startup command
+      let eggDockerImage = '';
+      let eggStartup = '';
+      let eggEnvironment = {};
+      try {
+        const nests = await pterodactylService.getAllNests();
+        for (const nest of nests) {
+          const nestEggs = await pterodactylService.getAllEggs(nest.attributes.id);
+          const matchedEgg = nestEggs.find((e) => e.attributes.id === Number(eggId));
+          if (matchedEgg) {
+            eggDockerImage = matchedEgg.attributes.docker_image || '';
+            eggStartup = matchedEgg.attributes.startup || '';
+            // Build environment from egg variables using their default values
+            if (matchedEgg.attributes.relationships && matchedEgg.attributes.relationships.variables) {
+              for (const v of matchedEgg.attributes.relationships.variables.data) {
+                eggEnvironment[v.attributes.env_variable] = v.attributes.default_value || '';
+              }
+            }
+            break;
+          }
+        }
+      } catch (eggErr) {
+        console.error('Failed to fetch egg details:', eggErr);
+      }
+
       // 7. Calculate already-used resources
       const [usedRows] = await pool.execute(
         "SELECT COALESCE(SUM(ram_mb),0) AS used_ram, COALESCE(SUM(cpu_percent),0) AS used_cpu, COALESCE(SUM(disk_mb),0) AS used_disk FROM servers WHERE user_id = ? AND status != 'deleted'",
@@ -220,9 +245,9 @@ router.post(
         name,
         user: req.user.ptero_user_id,
         egg: Number(eggId),
-        docker_image: '', // Pterodactyl uses egg default when empty
-        startup: '',      // Pterodactyl uses egg default when empty
-        environment: {},
+        docker_image: eggDockerImage,
+        startup: eggStartup,
+        environment: eggEnvironment,
         limits: {
           memory: ramMb,
           swap: 0,
