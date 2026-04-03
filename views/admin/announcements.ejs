@@ -45,7 +45,13 @@
     <div class="form-group" id="embedField" style="display:none;">
       <label class="form-label">Video Embed URL</label>
       <input type="url" name="embed_url" class="form-input" placeholder="https://www.youtube.com/embed/VIDEO_ID">
-      <div class="form-hint">Use the YouTube embed URL format: youtube.com/embed/VIDEO_ID</div>
+      <div class="form-hint">Use the YouTube embed URL: youtube.com/embed/VIDEO_ID</div>
+    </div>
+
+    <div class="form-group" id="thumbnailField" style="display:none;">
+      <label class="form-label">Custom Thumbnail Image URL</label>
+      <input type="url" name="thumbnail_url" class="form-input" placeholder="https://example.com/thumbnail.jpg">
+      <div class="form-hint">Shown as preview image. If empty, YouTube thumbnail is auto-fetched.</div>
     </div>
 
     <div class="grid-2">
@@ -109,6 +115,7 @@
 function toggleFields() {
   var type = document.getElementById('typeSelect').value;
   document.getElementById('embedField').style.display = type === 'video' ? 'block' : 'none';
+  document.getElementById('thumbnailField').style.display = type === 'video' ? 'block' : 'none';
   document.getElementById('contentField').style.display = type === 'video' ? 'none' : 'block';
 }
 </script>

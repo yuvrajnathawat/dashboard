@@ -18,9 +18,9 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Name required'),
     body('description').trim().optional(),
-    body('coin_cost').toInt().isInt({ min: 1 }).withMessage('Cost must be >= 1'),
+    body('coin_cost').notEmpty().withMessage('Cost required').isInt({ min: 1 }).withMessage('Cost must be >= 1'),
     body('resource_type').isIn(['ram', 'cpu', 'disk', 'servers']).withMessage('Invalid type'),
-    body('resource_amount').toInt().isInt({ min: 1 }).withMessage('Amount must be >= 1'),
+    body('resource_amount').notEmpty().withMessage('Amount required').isInt({ min: 1 }).withMessage('Amount must be >= 1'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -31,7 +31,7 @@ router.post(
     const { name, description, coin_cost, resource_type, resource_amount } = req.body;
     await pool.execute(
       'INSERT INTO shop_items (name, description, coin_cost, resource_type, resource_amount) VALUES (?, ?, ?, ?, ?)',
-      [name, description || '', coin_cost, resource_type, resource_amount]
+      [name, description || '', Number(coin_cost), resource_type, Number(resource_amount)]
     );
     req.flash('success', 'Shop item added.');
     return res.redirect('/admin/shop');

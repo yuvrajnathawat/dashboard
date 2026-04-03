@@ -145,6 +145,7 @@ const tables = [
       type ENUM('banner','video','promotion') NOT NULL DEFAULT 'banner',
       content TEXT,
       embed_url VARCHAR(500),
+      thumbnail_url VARCHAR(500),
       link_url VARCHAR(500),
       link_text VARCHAR(100),
       position ENUM('top','dashboard','sidebar') NOT NULL DEFAULT 'dashboard',

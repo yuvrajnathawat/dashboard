@@ -27,22 +27,64 @@
   </a>
   <% } %>
 </div>
+
 <% } else if (a.type === 'video' && a.embed_url) { %>
+<%
+  // Extract YouTube video ID from embed URL or watch URL
+  var ytId = '';
+  var embedSrc = a.embed_url || '';
+  var ytMatch = embedSrc.match(/(?:embed\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) ytId = ytMatch[1];
+  var thumbSrc = (a.thumbnail_url && a.thumbnail_url.trim())
+    ? a.thumbnail_url
+    : (ytId ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg' : '');
+  var modalId = 'vid-' + a.id;
+%>
 <div style="margin-bottom:20px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--bg-card);animation:fadeSlideIn 0.4s ease;">
-  <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary);">
-    🎬 <%= a.title %>
-    <% if (a.content) { %><span style="font-weight:400;font-size:13px;color:var(--text-muted);margin-left:8px;"><%= a.content %></span><% } %>
-  </div>
-  <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-    <iframe src="<%= a.embed_url %>" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen loading="lazy"></iframe>
-  </div>
-  <% if (a.link_url) { %>
-  <div style="padding:12px 18px;">
+  <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <div>
+      <span style="font-weight:600;font-size:14px;color:var(--text-primary);">🎬 <%= a.title %></span>
+      <% if (a.content) { %><span style="font-size:13px;color:var(--text-muted);margin-left:8px;"><%= a.content %></span><% } %>
+    </div>
+    <% if (a.link_url) { %>
     <a href="<%= a.link_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm"><%= a.link_text || 'Learn More' %></a>
+    <% } %>
   </div>
-  <% } %>
+
+  <!-- Thumbnail click-to-play -->
+  <div onclick="openVideoModal('<%= modalId %>', '<%= embedSrc.replace(/'/g, '') %>')"
+       style="position:relative;cursor:pointer;background:#000;overflow:hidden;aspect-ratio:16/9;">
+    <% if (thumbSrc) { %>
+    <img src="<%= thumbSrc %>" alt="<%= a.title %>"
+         style="width:100%;height:100%;object-fit:cover;display:block;transition:opacity 0.2s;"
+         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"
+         onerror="this.style.display='none'">
+    <% } else { %>
+    <div style="width:100%;height:200px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:48px;opacity:0.3;">🎬</span>
+    </div>
+    <% } %>
+    <!-- Play button overlay -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="width:64px;height:64px;background:rgba(0,0,0,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);border:2px solid rgba(255,255,255,0.3);transition:transform 0.2s;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div id="<%= modalId %>" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9500;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);"
+     onclick="if(event.target===this)closeVideoModal('<%= modalId %>')">
+  <div style="width:100%;max-width:860px;position:relative;">
+    <button onclick="closeVideoModal('<%= modalId %>')"
+            style="position:absolute;top:-40px;right:0;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:0.8;line-height:1;">×</button>
+    <div style="position:relative;padding-bottom:56.25%;height:0;border-radius:12px;overflow:hidden;background:#000;">
+      <iframe id="<%= modalId %>-frame" src="" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+    </div>
+  </div>
 </div>
 <% } %>
 
@@ -52,3 +94,23 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 </style>
+
+<script>
+function openVideoModal(id, src) {
+  var modal = document.getElementById(id);
+  var frame = document.getElementById(id + '-frame');
+  if (!modal || !frame) return;
+  // Add autoplay param
+  var url = src.indexOf('?') !== -1 ? src + '&autoplay=1' : src + '?autoplay=1';
+  frame.src = url;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeVideoModal(id) {
+  var modal = document.getElementById(id);
+  var frame = document.getElementById(id + '-frame');
+  if (frame) frame.src = '';
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+</script>

@@ -21,6 +21,7 @@ router.post(
     body('position').isIn(['top', 'dashboard', 'sidebar']).withMessage('Invalid position'),
     body('content').trim().optional(),
     body('embed_url').trim().optional(),
+    body('thumbnail_url').trim().optional(),
     body('link_url').trim().optional(),
     body('link_text').trim().optional(),
     body('sort_order').toInt().optional(),
@@ -31,10 +32,16 @@ router.post(
       req.flash('error', errors.array().map(e => e.msg).join(', '));
       return res.redirect('/admin/announcements');
     }
-    const { title, type, content, embed_url, link_url, link_text, position, sort_order } = req.body;
+    const { title, type, content, embed_url, thumbnail_url, link_url, link_text, position, sort_order } = req.body;
+
+    // Auto-add thumbnail_url column if missing (safe migration)
+    try {
+      await pool.execute('ALTER TABLE announcements ADD COLUMN thumbnail_url VARCHAR(500) DEFAULT NULL');
+    } catch (_) { /* column already exists */ }
+
     await pool.execute(
-      'INSERT INTO announcements (title, type, content, embed_url, link_url, link_text, position, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, type, content || '', embed_url || '', link_url || '', link_text || '', position, sort_order || 0]
+      'INSERT INTO announcements (title, type, content, embed_url, thumbnail_url, link_url, link_text, position, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, type, content || '', embed_url || '', thumbnail_url || '', link_url || '', link_text || '', position, sort_order || 0]
     );
     req.flash('success', 'Announcement added.');
     return res.redirect('/admin/announcements');
