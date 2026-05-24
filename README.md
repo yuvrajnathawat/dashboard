@@ -34,7 +34,7 @@ This opens an interactive menu:
 
 ```
 ╔══════════════════════════════════════════════╗
-║      SoloCloud Dashboard  —  Menu            ║
+║      Razer Dashboard  —  Menu            ║
 ╚══════════════════════════════════════════════╝
 
   1) Install          — Fresh install from GitHub
